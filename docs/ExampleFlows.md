@@ -44,7 +44,7 @@
 - to update a specifc user in my room
 - to delete a user from my room 
 
-- #### Scenario: I just created an account on the roommate app, now I want to to create a room and add my roommates, Roxanne and Fred. Unfortunetely, a couple days later, I received news that Fred had passed away(as a barrel owner, his manager works him really hard). Now I want to remove Fred from the room - RIP Fred! 
+- #### Scenario: I just created an account on the roommate app, now I want to to create a room and add my roommates, Roxanne and Fred. Unfortunately, a couple days later, I received news that Fred had passed away(as a barrel owner, his manager works him really hard). Now I want to remove Fred from the room - RIP Fred! 
 
 
 + To create a room I can call **POST `/room/`** and give my room a name - "POTION PEEPS", this returns a unique room_id, say 1
