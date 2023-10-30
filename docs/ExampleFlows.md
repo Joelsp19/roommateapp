@@ -52,8 +52,6 @@
 + Now, I realized I mispelled Roxanne's name, so to update this name I can run **POST `/room/user/{id}`** and pass in the correct spelling
 + I want to see Fred's information, so I can call **GET `/room/user/{id}`** and this will return all of his information - "name": Fred, "room_id": 1, "points": 0, "id": 6}
 + Now, Fred is dead. Time to remove him from our room. I can run **DELETE `/room/user/{id}`** by passing in Fred's id (6). No more Fred. 
-+ 
-+  
-+ 
+
 
 
