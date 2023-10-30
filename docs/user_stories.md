@@ -53,3 +53,4 @@ If our Venmo/payment API stops working, the database should clearly let the user
 
 13. User Removal Request:
 If a user decides to remove another roommate from the app, the user should be prompted to confirm this decision and the request must be confirmed by all other roommates or the “super” roommate. 
+
