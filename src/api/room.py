@@ -70,10 +70,10 @@ def set_user(id: int, user: User):
         )
     return {"success": "ok"}
 
-@router.post("/user/{id}")
+@router.delete("/user/{id}")
 def delete_user(id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        connection.execute(
             sqlalchemy.text("""DELETE FROM users 
                             WHERE id = :id"""),
                             {"id": id}
