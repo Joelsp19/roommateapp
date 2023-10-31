@@ -66,7 +66,7 @@ def set_user(id: int, user: User):
         result = connection.execute(
             sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points
                             WHERE id = :user_id"""),
-            {"name": user.name, "room_id": user.room_id, "points": user.points, "id": user.id}
+            {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": user.id}
         )
     return {"success": "ok"}
 
