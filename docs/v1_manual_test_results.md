@@ -15,7 +15,7 @@
 
 ## Testing Results
 
-# /room/ -Create a room
+### /room/ -Create a room
 curl -X 'POST' \
   'https://roommate-app-gs9w.onrender.com/room/' \
   -H 'accept: application/json' \
@@ -29,7 +29,7 @@ Response:
   "room_id": 2
 }
 
-# /room/user -Add a user
+### /room/user -Add a user
 curl -X 'POST' \
   'https://roommate-app-gs9w.onrender.com/room/user' \
   -H 'accept: application/json' \
@@ -44,7 +44,7 @@ Response:
   "success": "ok"
 }
 
-# /room/user/{id} -See a specific user
+### /room/user/{id} -See a specific user
 curl -X 'GET' \
   'https://roommate-app-gs9w.onrender.com/room/user/2' \
   -H 'accept: application/json' \
@@ -57,7 +57,7 @@ curl -X 'GET' \
   "points": null
 }
 
-# /room/user/{id} -Update a specific user
+### /room/user/{id} -Update a specific user
 curl -X 'POST' \
   'http://127.0.0.1:4000/room/user/2' \
   -H 'accept: application/json' \
@@ -74,7 +74,7 @@ Response:
   "success": "ok"
 }
 
-# /room/user/{id} -Delete user from room
+### /room/user/{id} -Delete user from room
 curl -X 'DELETE' \
   'http://127.0.0.1:4000/room/user/2' \
   -H 'accept: application/json' \
