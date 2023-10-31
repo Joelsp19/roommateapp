@@ -15,5 +15,71 @@
 
 ## Testing Results
 
-<add curl commands here> 
+# /room/ -Create a room
+curl -X 'POST' \
+  'https://roommate-app-gs9w.onrender.com/room/' \
+  -H 'accept: application/json' \
+  -H 'access_token: ad6db9c3b176f5cf7e72ad357f2b139f' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "room_name": "string"
+}'
+Response:
+{
+  "room_id": 2
+}
 
+# /room/user -Add a user
+curl -X 'POST' \
+  'https://roommate-app-gs9w.onrender.com/room/user' \
+  -H 'accept: application/json' \
+  -H 'access_token: ad6db9c3b176f5cf7e72ad357f2b139f' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "room_id": 2,
+  "name": "John"
+}'
+Response:
+{
+  "success": "ok"
+}
+
+# /room/user/{id} -See a specific user
+curl -X 'GET' \
+  'https://roommate-app-gs9w.onrender.com/room/user/2' \
+  -H 'accept: application/json' \
+  -H 'access_token:  ad6db9c3b176f5cf7e72ad357f2b139f'
+  Response:
+  {
+  "id": 2,
+  "name": "John",
+  "room_id": 2,
+  "points": null
+}
+
+# /room/user/{id} -Update a specific user
+curl -X 'POST' \
+  'http://127.0.0.1:4000/room/user/2' \
+  -H 'accept: application/json' \
+  -H 'access_token: testroommateapp' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "id": 2,
+  "name": "John",
+  "room_id": 2,
+  "points": 100
+}'
+Response:
+{
+  "success": "ok"
+}
+
+# /room/user/{id} -Delete user from room
+curl -X 'DELETE' \
+  'http://127.0.0.1:4000/room/user/2' \
+  -H 'accept: application/json' \
+  -H 'access_token: testroommateapp'
+Response:
+{
+"success": "ok"
+}
