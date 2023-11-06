@@ -247,13 +247,13 @@ Displays all the items in the split
 
 ```json
 [
-{
-	"id": "integer",
-	"name": "string",
-	"price": "integer",
-	"quantity": "integer"
-	"user_added": "integer"
-}
+  {
+    "id": "integer",
+    "name": "string",
+    "price": "float",
+    "quantity": "integer",
+    "user_added": "integer"
+  }
 ]
 ```
 
@@ -301,7 +301,7 @@ Completes the payment
 
 ```json
 {
-  "payment _type": "string",
+  "payment_type": "string",
   "amount": "float"
 }
 ```
