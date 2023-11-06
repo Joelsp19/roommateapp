@@ -67,3 +67,45 @@ def set_user(chore_id: int, user_id: int):
         
     return {"success": "ok"}
 
+@router.get("/chore/{id}")
+def get_chores_by_id(id: int):
+    list = []
+    with db.engine.begin() as connection:
+        tab = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT id,chore_name,completed
+                FROM chores
+                WHERE assigned_user_id = :id
+                ORDER BY completed
+                """), 
+                {"id": id}
+        )
+        
+    for row in tab:
+        list.append(
+            {
+            "id": row.id,
+            "chore_name": row.chore_name,
+            "completed": row.completed
+            }
+        )
+    if list == []:
+        return "Take a break! No chores to be completed."
+
+    return list
+
+
+@router.post("/chore/{choreid}/completed")
+def update_completed(choreid: int):
+    with db.engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                """
+                UPDATE chores 
+                SET completed = :true
+                WHERE id = :choreid
+                """)
+            ,{"choreid": choreid, "true": True}
+        )
+    return {"success" : "ok"}
