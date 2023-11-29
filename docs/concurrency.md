@@ -9,5 +9,6 @@ Another issue is with our points endpoints. The first transaction is reading the
 ![Diagram 1](Concurrency2.png)
 
 ## 3
+Another issue of concurrency is in our calendar endpoints. There can be a write skew issue when one transaction reads a row for a calendar event. After, another transaction starts that updates the start time of that event. This update goes through to the database and then the first transaction changes the end date of the event to a date that is now invalid because it is still based on the data from the original read before it was updated. This issue can also be solved with pessimistic concurrency control because it would block the row from being read or edited by any other transaction until the original transaction is completed. This means the second transaction would not be able to read the event times and update them, so the first transaction would still be valid.
 
 ![Diagram 1](Concurrency3.png)
