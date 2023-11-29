@@ -93,7 +93,7 @@ def get_calendar(calendar_id:int):
 
 class NewEvent(BaseModel):
     name: str
-    description: str = None
+    description: str
     start: datetime = datetime.now(timezone.utc)
     end: datetime = datetime.now(timezone.utc)
 
@@ -133,12 +133,13 @@ def add_event(new_event: NewEvent, calendar_id: int):
         result = connection.execute(
             sqlalchemy.text(
                 """
-                INSERT INTO event (name, start_time, end_time, calendar_id)
-                VALUES (:name, TIMESTAMP :start, TIMESTAMP :end, :calendar_id)
+                INSERT INTO event (name, description, start_time, end_time, calendar_id)
+                VALUES (:name, :description, TIMESTAMP :start, TIMESTAMP :end, :calendar_id)
                 """
             ),
             {
                 "name": new_event.name,
+                "description" : new_event.description,
                 "start": new_event.start.strftime("%Y-%m-%d %H:%M:%S"),
                 "end": new_event.end.strftime("%Y-%m-%d %H:%M:%S"),
                 "calendar_id": calendar_id,
@@ -155,10 +156,10 @@ def update_event(new_event: NewEvent, calendar_id: int, event_id: int):
             sqlalchemy.text(
                 """
                UPDATE event
-               SET name=:name, start_time=TIMESTAMP :start, end_time=TIMESTAMP :end, calendar_id=:calendar_id
+               SET name=:name, description=:description, start_time=TIMESTAMP :start, end_time=TIMESTAMP :end, calendar_id=:calendar_id
                WHERE id = :event_id
                 """),
-            {"name": new_event.name, "start": new_event.start.strftime("%Y-%m-%d %H:%M:%S"),
+            {"name": new_event.name, "description": new_event.description, "start": new_event.start.strftime("%Y-%m-%d %H:%M:%S"),
                 "end": new_event.end.strftime("%Y-%m-%d %H:%M:%S"), "event_id": event_id, "calendar_id": calendar_id}
         )
 
@@ -202,3 +203,6 @@ def delete_event(calendar_id: int, event_id: int):
                 {"calendar_id": calendar_id, "event_id": event_id})
         
     return {"success": "ok"}
+
+
+
