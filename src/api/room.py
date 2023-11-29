@@ -5,6 +5,7 @@ from datetime import date
 import sqlalchemy
 from sqlalchemy import func, extract
 from src import database as db
+from datetime import datetime
 
 router = APIRouter(
     prefix="/room",
@@ -33,144 +34,6 @@ def add_room(new_room: NewRoom):
         )
         room_id = result.scalar()
     return {"room_id": room_id}
-
-#update room info
-@router.put("/{room_id}")
-def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
-    #check if the given calendar_id is a valid calendar_id
-    #update the roomname and calendar if it is
-
-    with db.engine.begin() as connection:
-
-
-        if calendar_id == None:
-            result = connection.execute(
-                sqlalchemy.text(
-                """
-                UPDATE room
-                SET room_name = :room_name
-                WHERE id = :room_id
-                """),
-                {"room_name": new_room.room_name, "room_id": room_id}
-            )
-        else:
-            valid_calendar_id= connection.execute(
-                sqlalchemy.text(
-                """
-                SELECT id
-                FROM calendar
-                WHERE id = :calendar_id
-                """),
-                {"calendar_id": calendar_id}
-            )
-
-            if valid_calendar_id.scalar() == None:
-                return "Not a valid calendar id"
-
-            result = connection.execute(
-                sqlalchemy.text(
-                """
-                UPDATE room
-                SET room_name = :room_name, calendar_id = :calendar_id
-                WHERE id = :room_id
-                """),
-                {"room_name": new_room.room_name, "calendar_id": calendar_id, "room_id": room_id}
-            )
-
-
-    if result != None:
-        return {"success": "ok"}
-    else:
-        return {"success": "not_ok"}
-
-#get the room details
-@router.get("/{room_id}")
-def get_room():
-    with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text(
-            """
-            SELECT room_name, name as calendar_name
-            FROM room
-            JOIN calendar on calendar_id = calendar.id
-            WHERE id = :room_id
-            """)
-        )
-        room = result.scalars()
-
-    return {
-        "room_name":room.room_name,
-        "calendar_id": room.calendar_name
-    }
-
-#update room info
-@router.put("/{room_id}")
-def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
-    #check if the given calendar_id is a valid calendar_id
-    #update the roomname and calendar if it is
-
-    with db.engine.begin() as connection:
-
-
-        if calendar_id == None:
-            result = connection.execute(
-                sqlalchemy.text(
-                """
-                UPDATE room
-                SET room_name = :room_name
-                WHERE id = :room_id
-                """),
-                {"room_name": new_room.room_name, "room_id": room_id}
-            )
-        else:
-            valid_calendar_id= connection.execute(
-                sqlalchemy.text(
-                """
-                SELECT id
-                FROM calendar
-                WHERE id = :calendar_id
-                """),
-                {"calendar_id": calendar_id}
-            )
-
-            if valid_calendar_id.scalar() == None:
-                return "Not a valid calendar id"
-
-            result = connection.execute(
-                sqlalchemy.text(
-                """
-                UPDATE room
-                SET room_name = :room_name, calendar_id = :calendar_id
-                WHERE id = :room_id
-                """),
-                {"room_name": new_room.room_name, "calendar_id": calendar_id, "room_id": room_id}
-            )
-
-
-    if result != None:
-        return {"success": "ok"}
-    else:
-        return {"success": "not_ok"}
-
-#get the room details
-@router.get("/{room_id}")
-def get_room():
-    with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text(
-            """
-            SELECT room_name, name as calendar_name
-            FROM room
-            JOIN calendar on calendar_id = calendar.id
-            WHERE id = :room_id
-            """)
-        )
-        room = result.scalars()
-
-    return {
-        "room_name":room.room_name,
-        "calendar_id": room.calendar_name
-    }
 
 #update room info
 @router.put("/{room_id}")
@@ -419,20 +282,30 @@ def get_reward(room_id: int):
         for row in res:
             users.append(row.id)
 
+        print("users", users)
         curmomth = func.extract('month', func.timezone('UTC', func.now()))
         curyear = func.extract('year', func.timezone('UTC', func.now()))
+
+        currentMonth = datetime.now().month
+        currentYear = datetime.now().year
+
+        print(currentMonth)
+        print(currentYear)
 
         points = []
         for user in users:
             total = connection.execute(
                 sqlalchemy.text("""
-                    SELECT SUM(points) FROM chores WHERE assigned_user_id = :user_id
-                    and extract('month' created_at) = :month
-                    and extract('year' created_at) = :year"""),
-                {"user_id": user, "month": curmomth, "year": curyear}
+                    SELECT COALESCE(SUM(points), 0) FROM chores WHERE assigned_user_id = :user_id
+                    and extract(MONTH FROM created_at) = :month
+                    and extract(YEAR FROM  created_at) = :year"""),
+                {"user_id": user, "month": currentMonth, "year": currentYear}
             ).scalar()
+            print("total", total)
             points.append(total)
 
+        print("test")
+        print(points)
         max_user = users[points.index(max(points))]
 
         maxname = connection.execute(
@@ -446,16 +319,16 @@ def get_reward(room_id: int):
         ).scalar()
         if cal is None:
             calid = connection.execute(
-                sqlalchemy.text("INSERT INTO calendar (name) VALUES (:calendar_name)"),
-                {"name": "Room " + str(room_id) + "'s Calendar"}
+                sqlalchemy.text("INSERT INTO calendar (name) VALUES (:calendar_name) RETURNING id"),
+                {"calendar_name": "Room " + str(room_id) + "'s Calendar"}
             )
             cal = calid.fetchone()[0]
 
         connection.execute(
-            sqlalchemy.text("INSERT INTO events (calendar_id, name, description, start_time, end_time) VALUES (:calendar_id, :name, :description, :start_time, :end_time)"),
+            sqlalchemy.text("INSERT INTO event (calendar_id, name, description, start_time, end_time) VALUES (:calendar_id, :name, :description, :start_time, :end_time)"),
             {"calendar_id": cal, "name": "Reward for " + str(maxname),
              "description": "Reward to be completed by other roommates",
-             "start_time": func.timezone('UTC', func.now()), "end_time": func.timezone('UTC', func.now())}
+             "start_time": datetime.now(), "end_time": datetime.now()}
         )
 
     return {"success": "ok"}
