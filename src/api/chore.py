@@ -67,7 +67,7 @@ def set_user(chore_id: int, user_id: int):
         
     return {"success": "ok"}
 
-@router.get("/chore/{id}")
+@router.get("/{id}")
 def get_chores_by_id(id: int):
     list = []
     with db.engine.begin() as connection:
@@ -96,7 +96,7 @@ def get_chores_by_id(id: int):
     return list
 
 
-@router.post("/chore/{choreid}/completed")
+@router.post("/{choreid}/completed")
 def update_completed(choreid: int):
     with db.engine.begin() as connection:
         connection.execute(
