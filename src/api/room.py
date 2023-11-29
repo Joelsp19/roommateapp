@@ -174,7 +174,7 @@ def set_user(id: int, user: User, calendar_id: int = None):
 def delete_user(id: int):
     with db.engine.begin() as connection:
         connection.execute(
-            sqlalchemy.text("""DELETE FROM users 
+            sqlalchemy.text("""DELETE FROM users
                             WHERE id = :id"""),
                             {"id": id}
         )
@@ -269,3 +269,10 @@ def free_time(room_id: int, date_wanted: date):
         return "You have no free time today :("
     return list
 
+@router.post("/reward")
+def get_reward(id: int):
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text("SELECT * FROM rewards WHERE id = :reward_id"),
+            {"reward_id": id}
+        )

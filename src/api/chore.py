@@ -14,19 +14,21 @@ class NewChore(BaseModel):
     chore_name: str
     completed: bool
     assigned_user_id: int = None
+    points: int
 
 @router.post("/")
 def add_chore(new_chore: NewChore):
     with db.engine.begin() as connection:
         if new_chore.assigned_user_id != None:
             result = connection.execute(
-                sqlalchemy.text("INSERT INTO chores (chore_name, assigned_user_id) VALUES (:name, :assigned_user_id) RETURNING id"),
-                {"name": new_chore.chore_name, "assigned_user_id": new_chore.assigned_user_id}
+                sqlalchemy.text("INSERT INTO chores (chore_name, assigned_user_id, completed, points) VALUES (:name, :assigned_user_id, :completed, :points) RETURNING id"),
+                {"name": new_chore.chore_name, "assigned_user_id": new_chore.assigned_user_id,
+                 "completed": new_chore.completed, "points": new_chore.points}
             )
         else :
             result = connection.execute(
-                sqlalchemy.text("INSERT INTO chores (chore_name) VALUES (:name) RETURNING id"),
-                {"name": new_chore.chore_name}
+                sqlalchemy.text("INSERT INTO chores (chore_name, points) VALUES (:name, :points) RETURNING id"),
+                {"name": new_chore.chore_name, "points": new_chore.points}
             )
 
     chore_id = result.scalar()
@@ -37,11 +39,11 @@ def get_chore():
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("SELECT * FROM chores ")
-        ) 
-    
+        )
+
     for chore in result:
         print(chore)
-         
+
     return {"success": "ok"}
 
 @router.get("/all")
@@ -49,7 +51,7 @@ def get_all_chore():
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("SELECT * FROM chores WHERE completed = true"),
-        ) 
+        )
 
     for chore in result:
         print(chore)
@@ -60,11 +62,11 @@ def get_all_chore():
 def set_user(chore_id: int, user_id: int):
     with db.engine.begin() as connection:
         result = connection.execute(
-            sqlalchemy.text("""UPDATE chores 
+            sqlalchemy.text("""UPDATE chores
                             SET assigned_user_id = :user_id
                             WHERE id = :chore_id"""),
                             {"user_id": user_id, "chore_id": chore_id})
-        
+
     return {"success": "ok"}
 
 @router.get("/{id}")
@@ -78,10 +80,10 @@ def get_chores_by_id(id: int):
                 FROM chores
                 WHERE assigned_user_id = :id
                 ORDER BY completed
-                """), 
+                """),
                 {"id": id}
         )
-        
+
     for row in tab:
         list.append(
             {
@@ -102,10 +104,17 @@ def update_completed(choreid: int):
         connection.execute(
             sqlalchemy.text(
                 """
-                UPDATE chores 
+                UPDATE chores
                 SET completed = :true
                 WHERE id = :choreid
                 """)
             ,{"choreid": choreid, "true": True}
         )
+        connection.execute(sqlalchemy.text(
+            """UPDATE users
+            SET points = points + (SELECT points FROM chores WHERE id = :choreid)
+            WHERE id = (SELECT assigned_user_id FROM chores WHERE id = :choreid)"""),
+            {"choreid": choreid}
+        )
     return {"success" : "ok"}
+
