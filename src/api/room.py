@@ -74,9 +74,17 @@ def set_user(id: int, user: User):
 def delete_user(id: int):
     with db.engine.begin() as connection:
         connection.execute(
-            sqlalchemy.text("""DELETE FROM users 
+            sqlalchemy.text("""DELETE FROM users
                             WHERE id = :id"""),
                             {"id": id}
         )
-    
+
     return {"success": "ok"}
+
+@router.post("/reward")
+def get_reward(id: int):
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text("SELECT * FROM rewards WHERE id = :reward_id"),
+            {"reward_id": id}
+        )
