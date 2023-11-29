@@ -86,7 +86,7 @@ def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
 
 #get the room details
 @router.get("/{room_id}")
-def get_room():
+def get_room(room_id: int):
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text(
