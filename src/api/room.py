@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
+from sqlalchemy import func, extract
 from src import database as db
 
 router = APIRouter(
@@ -82,9 +83,53 @@ def delete_user(id: int):
     return {"success": "ok"}
 
 @router.post("/reward")
-def get_reward(id: int):
+def get_reward(room_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text("SELECT * FROM rewards WHERE id = :reward_id"),
-            {"reward_id": id}
+        res = connection.execute(
+            sqlalchemy.text("SELECT * FROM users WHERE room_id = :room_id"),
+            {"room_id": room_id}
         )
+        users = []
+        for row in res:
+            users.append(row.id)
+
+        curmomth = func.extract('month', func.timezone('UTC', func.now()))
+        curyear = func.extract('year', func.timezone('UTC', func.now()))
+
+        points = []
+        for user in users:
+            total = connection.execute(
+                sqlalchemy.text("""
+                    SELECT SUM(points) FROM chores WHERE assigned_user_id = :user_id
+                    and extract('month' created_at) = :month
+                    and extract('year' created_at) = :year"""),
+                {"user_id": user, "month": curmomth, "year": curyear}
+            ).scalar()
+            points.append(total)
+
+        max_user = users[points.index(max(points))]
+
+        maxname = connection.execute(
+            sqlalchemy.text("SELECT name FROM users WHERE id = :user_id"),
+            {"user_id": max_user}
+        ).scalar()
+
+        cal = connection.execute(
+            sqlalchemy.text("SELECT calendar_id FROM room WHERE id = :room_id"),
+            {"room_id": room_id}
+        ).scalar()
+        if cal is None:
+            calid = connection.execute(
+                sqlalchemy.text("INSERT INTO calendar (name) VALUES (:calendar_name)"),
+                {"name": "Room " + str(room_id) + "'s Calendar"}
+            )
+            cal = calid.fetchone()[0]
+
+        connection.execute(
+            sqlalchemy.text("INSERT INTO events (calendar_id, name, description, start_time, end_time) VALUES (:calendar_id, :name, :description, :start_time, :end_time)"),
+            {"calendar_id": cal, "name": "Reward for " + str(maxname),
+             "description": "Reward to be completed by other roommates",
+             "start_time": func.timezone('UTC', func.now()), "end_time": func.timezone('UTC', func.now())}
+        )
+
+    return {"success": "ok"}
