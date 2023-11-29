@@ -17,6 +17,7 @@ class NewSplit(BaseModel):
 
 @router.post("/split/")
 def add_split(new_split: NewSplit):
+    '''Create a split'''
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text("""
@@ -31,33 +32,50 @@ def add_split(new_split: NewSplit):
     return {"success": "ok"}
 
 
-# TODO: Implement split updating
-# @router.put("/split/{split_id}/update/")
+@router.put("/split/{split_id}/update/")
+def update_split(split_id: int, name: str, price: float, quantity: int):
+    '''Update a split'''
+    with db.engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text("""
+                            UPDATE split
+                            SET
+                                name = :name,
+                                price = :price,
+                                quantity = :quantity
+                            WHERE id = :split_id
+                            """),
+                            {"split_id": split_id,
+                             "name": name,
+                             "price": price,
+                             "quantity": quantity}
+        )
+    return {"success": "ok"}
 
 
-@router.get("/split/")
-def get_split():
+@router.get("/split/{split_id}")
+def get_split(split_id: int):
+    '''Get split given a split id'''
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("""
                             SELECT * 
                             FROM split
-                            """))
-    split_db = result.all()
-    split_list = []
-    for split in split_db:
-        split_list.append({
-            "id": split.id,
+                            WHERE id = :split_id
+                            """),
+                            {"split_id": split_id}
+    )
+    split = result.first()
+    return {"id": split.id,
             "name": split.name,
             "price": split.price,
             "quantity": split.quantity,
-            "user_added": split.user_added
-        })
-    return split_list
+            "user_added": split.user_added}
 
 
 @router.get("/split/{user_id}/")
 def get_split_user(user_id: int):
+    '''Get splits created by a certain user'''
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("""
@@ -82,6 +100,7 @@ def get_split_user(user_id: int):
 
 @router.get("/split/{user_id}/pay/")
 def pay_split(user_id: int):
+    '''Given a user id, return how much they have to pay and to whom'''
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("""
@@ -115,21 +134,16 @@ def pay_split(user_id: int):
     user_splits_list = []
     for split in user_splits:
         user_splits_list.append({
-            "id": split.id,
-            "name": split.name,
-            "price": split.price / num_roommates,
-            "quantity": split.quantity,
-            "user_added": split.user_added
+            "Item": split.name,
+            "Price you pay": split.price / num_roommates,
+            "Who you pay": split.user_added
         })
     return user_splits_list
 
 
-# TODO: Implement /split/{user_id}/pay/complete/
-# @router.post("/split/{user_id}/pay/complete/")
-
-
 @router.delete("/split/{split_id}/delete/")
 def delete_split(split_id: int):
+    '''Delete a split'''
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text("""
