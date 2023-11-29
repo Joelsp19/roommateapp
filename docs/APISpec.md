@@ -130,6 +130,47 @@ Removes a user
 }
 ```
 
+### GET `/room/{room_id}/free_time`
+
+Complex Endpoint 1 - Find an available time for all the users in the room on a specified date where no one has any events scheduled.
+
+**Request**:
+
+```json
+{
+"room_id": "integer"
+"date_wanted": "date"
+}
+```
+
+**Returns**:
+
+```json
+{
+  "string"
+}
+```
+
+### POST `/room/reward`
+
+Complex Endpoint 2 - Finds the user in the specified room id who earned the most points from chores in that month through accumulation. Then, creates a calendar event for the room's shared calendar stating which roommate won the reward this month.
+
+**Request**:
+
+```json
+{
+"room_id": "integer"
+}
+```
+
+**Returns**:
+
+```json
+{
+  "success": "ok"
+}
+```
+
 ## CHORES
 
 ### GET `/chore/`
