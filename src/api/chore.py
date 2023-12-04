@@ -5,8 +5,8 @@ import sqlalchemy
 from src import database as db
 
 router = APIRouter(
-    prefix="/chore",
-    tags=["chore"],
+    prefix="/chores",
+    tags=["chores"],
     dependencies=[Depends(auth.get_api_key)],
 )
 
@@ -36,27 +36,45 @@ def add_chore(new_chore: NewChore):
 
 @router.get("/")
 def get_chore():
+    chores = []
     with db.engine.begin() as connection:
         result = connection.execute(
-            sqlalchemy.text("SELECT * FROM chores ")
+            sqlalchemy.text("""SELECT chore_name, completed, name as assigned_user_name, points 
+                            FROM chores
+                            JOIN users on users.id = assigned_user_id
+                            """)
         )
 
     for chore in result:
-        print(chore)
+        chores.append({
+            "chore_id" : chore.id,
+            "chore_name": chore.name,
+            "completed": chore.completed,
+            "assigned_user_id": chore.assigned_user_name,
+            "points": chore.points
+        })
 
-    return {"success": "ok"}
+    return chores
 
-@router.get("/all")
-def get_all_chore():
+@router.get("/completed")
+def get_chores_completed():
+    chores = []
     with db.engine.begin() as connection:
         result = connection.execute(
-            sqlalchemy.text("SELECT * FROM chores WHERE completed = true"),
+            sqlalchemy.text("""SELECT chore_name, completed, name as assigned_user_name, points 
+                            FROM chores
+                            JOIN users on users.id = assigned_user_id
+                            WHERE completed=true
+                            """),
         )
-
     for chore in result:
-        print(chore)
-
-    return {"success": "ok"}
+        chores.append({
+            "chore_id" : chore.id,
+            "chore_name": chore.name,
+            "assigned_user_id": chore.assigned_user_name,
+            "points": chore.points
+        })
+    return chores
 
 @router.post("/{chore_id}/claim/{user_id}")
 def set_user(chore_id: int, user_id: int):
@@ -93,7 +111,8 @@ def get_chores_by_id(id: int):
             }
         )
     if list == []:
-        return "Take a break! No chores to be completed."
+        print("Take a break! No chores to be completed.")
+        return []
 
     return list
 

@@ -8,8 +8,8 @@ from src import database as db
 from datetime import datetime
 
 router = APIRouter(
-    prefix="/room",
-    tags=["room"],
+    prefix="/rooms",
+    tags=["rooms"],
     dependencies=[Depends(auth.get_api_key)],
 )
 

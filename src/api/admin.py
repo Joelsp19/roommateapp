@@ -11,8 +11,7 @@ router = APIRouter(
 @router.post("/reset")
 def reset():
     """
-    Reset the game state. Gold goes to 100, all potions are removed from
-    inventory, and all barrels are removed from inventory. Carts are all reset.
+    Reset the state -- won't implement for now
     """
     return "OK"
 
@@ -20,10 +19,8 @@ def reset():
 @router.get("/shop_info/")
 def get_shop_info():
     """ """
-
-    # TODO: Change me!
     return {
-        "shop_name": "Potion Shop",
-        "shop_owner": "Potion Seller",
+        "site_name": "Roommate App",
+        "site_owners": "Joel, Wesley, Ritvik, Krish",
     }
 
