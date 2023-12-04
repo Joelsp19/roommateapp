@@ -309,7 +309,7 @@ Displays all the items user added
   {
     "id": "integer",
     "name": "string",
-    "price": "integer",
+    "price": "float",
     "quantity": "integer",
     "user_added": "integer"
   }
@@ -327,32 +327,11 @@ Displays all the items user must pay for
   {
     "id": "integer",
     "name": "string",
-    "price": "integer",
+    "price": "float",
     "quantity": "integer",
     "user_added": "integer"
   }
 ]
-```
-
-### POST `/split/{user_id}/pay/complete/`
-
-Completes the payment
-
-**Request**:
-
-```json
-{
-  "payment_type": "string",
-  "amount": "float"
-}
-```
-
-**Returns**:
-
-```json
-{
-  "success": "ok"
-}
 ```
 
 ### POST `/split/`
@@ -365,7 +344,7 @@ Adds an item to the split database
 [
   {
     "name": "string",
-    "price": "integer",
+    "price": "float",
     "quantity": "integer"
   }
 ]
@@ -389,7 +368,7 @@ Updates split item information
 [
 {
 	"name": "string",
-	"price": "integer",
+	"price": "float",
 	"quantity": "integer"
 }
 ]
