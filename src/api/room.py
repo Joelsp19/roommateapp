@@ -43,7 +43,6 @@ def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
 
     with db.engine.begin() as connection:
 
-
         if calendar_id == None:
             result = connection.execute(
                 sqlalchemy.text(
@@ -93,15 +92,17 @@ def get_room(room_id: int):
             """
             SELECT room_name, name as calendar_name
             FROM room
-            JOIN calendar on calendar_id = calendar.id
-            WHERE id = :room_id
-            """)
+            LEFT JOIN calendar on calendar_id = calendar.id
+            WHERE room.id = :room_id
+            """), 
+            {"room_id": room_id}
+
         )
-        room = result.scalars()
+        room = result.first()
 
     return {
-        "room_name":room.room_name,
-        "calendar_id": room.calendar_name
+        "room_name":room.room_name if room.room_name != None else "No associated room name",
+        "calendar_id":  room.calendar_name if room.calendar_name != None else "No associated calendar"
     }
 
 
