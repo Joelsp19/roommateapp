@@ -1,7 +1,7 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import room, chore, split, calendar
+from src.api import user, room, chore, split, calendar
 import json
 import logging
 import sys
@@ -21,6 +21,7 @@ app = FastAPI(
     },
 )
 
+app.include_router(user.router)
 app.include_router(room.router)
 app.include_router(chore.router)
 app.include_router(split.router)
