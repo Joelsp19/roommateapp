@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
 from src import database as db
+from datetime import datetime
 
 router = APIRouter(
     prefix="/chore",
@@ -129,23 +130,61 @@ def get_chores_by_id(id: int):
 
     return list
 
-@router.post("/{choreid}/completed")
-def update_completed(choreid: int):
+@router.get("/{chore_id}/duration")
+def get_chore_duration(chore_id: int):
+    '''Returns how long a chore has been uncompleted for'''
+    with db.engine.begin() as connection:
+        created_time, completed_time = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT created_at, completed_at
+                FROM chores
+                WHERE id = :chore_id
+                """
+            ),
+            {"chore_id": chore_id}
+        ).all()[0]
+
+    if completed_time == None:
+        date_diff = datetime.now(tz=created_time.tzinfo) - created_time
+    else:
+        date_diff = completed_time - created_time
+    days = date_diff.days
+    hours = date_diff.seconds // 3600
+    return {"duration": f"{days} days and {hours} hours"}
+    
+@router.post("/{chore_id}/completed")
+def update_completed(chore_id: int):
     '''Completes a chore and awards the user points'''
     with db.engine.begin() as connection:
+        completed, created_at = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT completed, created_at
+                FROM chores
+                WHERE id = :chore_id"""
+            ),
+            {"chore_id": chore_id}
+        ).all()[0]
+
         connection.execute(
             sqlalchemy.text(
                 """
                 UPDATE chores
-                SET completed = :true
+                SET completed = :true, completed_at = :completed_at
                 WHERE id = :choreid
-                """)
-            ,{"choreid": choreid, "true": True}
+                """),
+            {"choreid": chore_id,
+             "true": True,
+             "completed_at": datetime.now(tz=created_at.tzinfo)}
         )
-        connection.execute(sqlalchemy.text(
-            """UPDATE users
-            SET points = points + (SELECT points FROM chores WHERE id = :choreid)
-            WHERE id = (SELECT assigned_user_id FROM chores WHERE id = :choreid)"""),
-            {"choreid": choreid}
+        connection.execute(
+            sqlalchemy.text(
+                """
+                UPDATE users
+                SET points = points + (SELECT points FROM chores WHERE id = :choreid)
+                WHERE id = (SELECT assigned_user_id FROM chores WHERE id = :choreid)
+                """),
+            {"choreid": chore_id}
         )
     return {"success" : "ok"}
