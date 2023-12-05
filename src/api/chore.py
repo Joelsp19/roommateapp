@@ -20,48 +20,61 @@ class NewChore(BaseModel):
 def add_chore(new_chore: NewChore):
     with db.engine.begin() as connection:
         if new_chore.assigned_user_id != None:
-            result = connection.execute(
+            chore_id = connection.execute(
                 sqlalchemy.text("INSERT INTO chores (chore_name, assigned_user_id, completed, points) VALUES (:name, :assigned_user_id, :completed, :points) RETURNING id"),
                 {"name": new_chore.chore_name, "assigned_user_id": new_chore.assigned_user_id,
                  "completed": new_chore.completed, "points": new_chore.points}
-            )
+            ).scalar()
         else :
-            result = connection.execute(
+            chore_id = connection.execute(
                 sqlalchemy.text("INSERT INTO chores (chore_name, points) VALUES (:name, :points) RETURNING id"),
                 {"name": new_chore.chore_name, "points": new_chore.points}
-            )
+            ).scalar()
 
-    chore_id = result.scalar()
+
     return {"chore_id": chore_id}
 
 @router.get("/")
 def get_chore():
     with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text("SELECT * FROM chores ")
+        chores = connection.execute(
+            sqlalchemy.text("SELECT id, chore_name, completed, assigned_user_id, points FROM chores ")
         )
 
-    for chore in result:
-        print(chore)
+    chore_list = []
+    for chore in chores:
+        chore_list.append({
+            "id": chore.id,
+            "name": chore.chore_name,
+            "completed": chore.completed,
+            "assigned": chore.assigned_user_id,
+            "points": chore.points
+        })
+    return chore_list
 
-    return {"success": "ok"}
 
 @router.get("/all")
-def get_all_chore():
+def get_completed_chore():
     with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text("SELECT * FROM chores WHERE completed = true"),
+        chores = connection.execute(
+            sqlalchemy.text("SELECT id, chore_name, assigned_user_id, points FROM chores WHERE completed = true"),
         )
 
-    for chore in result:
-        print(chore)
+    chore_list = []
+    for chore in chores:
+        chore_list.append({
+            "id": chore.id,
+            "name": chore.chore_name,
+            "assigned": chore.assigned_user_id,
+            "points": chore.points
+        })
+    return chore_list
 
-    return {"success": "ok"}
 
 @router.post("/{chore_id}/claim/{user_id}")
 def set_user(chore_id: int, user_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        connection.execute(
             sqlalchemy.text("""UPDATE chores
                             SET assigned_user_id = :user_id
                             WHERE id = :chore_id"""),
