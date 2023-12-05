@@ -104,7 +104,7 @@ def get_room(room_id: int):
     }
 
 @router.get("/{room_id}/users")
-def get_room_users(room_id: int):
+def get_roommmates(room_id: int):
     '''Given a room_id, returns a list of user ids living in the room'''
     with db.engine.begin() as connection:
         roommates = connection.execute(
