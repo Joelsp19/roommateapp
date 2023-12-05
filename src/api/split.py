@@ -73,8 +73,8 @@ def get_split(split_id: int):
 
 
 @router.get("/split/{user_id}/")
-def get_split_user(user_id: int):
-    '''Returns splits created by a certain user'''
+def get_split_by_user(user_id: int):
+    '''Returns all splits created by a certain user'''
     with db.engine.begin() as connection:
         user_splits = connection.execute(
             sqlalchemy.text("""
@@ -99,7 +99,7 @@ def get_split_user(user_id: int):
 
 @router.get("/split/{user_id}/pay/")
 
-def pay_split(user_id: int):
+def pay_splits(user_id: int):
     '''Given a user id, return how much they have to pay and to whom'''
     with db.engine.begin() as connection:
         user_splits = connection.execute(

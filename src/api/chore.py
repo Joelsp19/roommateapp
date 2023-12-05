@@ -36,7 +36,7 @@ def add_chore(new_chore: NewChore):
     return {"chore_id": chore_id}
 
 @router.get("/")
-def get_chore():
+def get_all_chores():
     '''Returns all chores in the database'''
     with db.engine.begin() as connection:
         chores = connection.execute(

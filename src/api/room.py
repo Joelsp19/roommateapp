@@ -103,6 +103,23 @@ def get_room(room_id: int):
         "calendar_id":  room.calendar_name if room.calendar_name != None else "No associated calendar"
     }
 
+@router.get("/{room_id}/users")
+def get_room_users(room_id: int):
+    '''Given a room_id, returns a list of user ids living in the room'''
+    with db.engine.begin() as connection:
+        roommates = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT id
+                FROM users
+                WHERE room_id = :room_id
+                """
+            ),
+            {"room_id": room_id}
+        ).all()
+    
+    roommate_list = [roommate[0] for roommate in roommates]
+    return roommate_list
 
 class NewUser(BaseModel):
     room_id: int
@@ -194,7 +211,7 @@ def delete_user(id: int):
     return {"deleted_user": deleted.name}
 
 @router.get("/{room_id}/free_time")
-def free_time(room_id: int, date_wanted: date):
+def get_free_times(room_id: int, date_wanted: date):
     '''
     Grab all calendar ids associated with user under the room and the room
     Grab all events with these calendar ids
