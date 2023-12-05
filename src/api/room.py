@@ -119,7 +119,9 @@ def add_user(new_user: NewUser):
             sqlalchemy.text("INSERT INTO users (name, room_id) VALUES (:name, :room_id) RETURNING id"),
             {"name": new_user.name, "room_id": new_user.room_id}
         )
-    return {"success": "ok"}
+
+    uid = result.scalar()
+    return {"user_id": uid}
 
 
 class User(BaseModel):
@@ -149,7 +151,7 @@ def set_user(id: int, user: User, calendar_id: int = None):
     '''Updates user data'''
     with db.engine.begin() as connection:
         if calendar_id == None:
-            result = connection.execute(
+            connection.execute(
                 sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points
                                 WHERE id = :user_id"""),
                 {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": id }
