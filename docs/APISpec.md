@@ -22,7 +22,7 @@ Adds a room (done on creation)
 }
 ```
 
-### POST `/room/user/`
+### POST `/user/`
 
 Adds a user and creates id
 
@@ -42,44 +42,7 @@ Adds a user and creates id
 }
 ```
 
-### GET `/room/user/superuser`
-
-Displays information about the superuser
-
-**Returns**:
-
-```json
-{
-  "id": "integer",
-  "name": "string"
-}
-```
-
-### POST `/room/user/{id}/superuser`
-
-Requests to become the superuser
-
-**Returns**:
-
-```json
-{
-  "success": "ok"
-}
-```
-
-### POST `/room/user/{id}/superuser/{new_id}/transfer`
-
-Transfers the superuser to be the new user(must be a superuser)
-
-**Returns**:
-
-```json
-{
-  "success": "ok"
-}
-```
-
-### GET `/room/user/{id}/`
+### GET `/user/{id}/`
 
 Displays user information
 
@@ -94,7 +57,7 @@ Displays user information
 }
 ```
 
-### PUT `/room/user/{id}/`
+### PUT `/user/{id}/`
 
 Updates user information
 
@@ -129,7 +92,7 @@ Returns a list of user ids in the room
 ]
 ```
 
-### DELETE `/room/user/{id}`
+### DELETE `/user/{id}`
 
 Removes a user
 
