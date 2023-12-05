@@ -5,7 +5,8 @@ import sqlalchemy
 from src import database as db
 
 router = APIRouter(
-    tags=["split"],
+    prefix="/splits",
+    tags=["splits"],
     dependencies=[Depends(auth.get_api_key)],
 )
 
@@ -15,24 +16,26 @@ class NewSplit(BaseModel):
     quantity: int
     user_added: int     # Temp for testing
 
-@router.post("/split/")
+@router.post("/")
 def add_split(new_split: NewSplit):
     '''Add a split in the database'''
     with db.engine.begin() as connection:
-        connection.execute(
+        result = connection.execute(
             sqlalchemy.text("""
                             INSERT INTO split (name, price, quantity, user_added) 
                             VALUES (:name, :price, :quantity, :user_added) 
-                            """),
+                            RETURNING id
+                            """) ,
                             {"name": new_split.name,
                              "price": new_split.price,
                              "quantity": new_split.quantity,
                              "user_added": new_split.user_added}
         )
-    return {"success": "ok"}
+        split_id = result.scalar()
+    return {"split_id": split_id}
 
 
-@router.put("/split/{split_id}/update/")
+@router.put("/{split_id}/update/")
 def update_split(split_id: int, name: str, price: float, quantity: int):
     '''Update a split given a split_id'''
     with db.engine.begin() as connection:
@@ -53,7 +56,7 @@ def update_split(split_id: int, name: str, price: float, quantity: int):
     return {"success": "ok"}
 
 
-@router.get("/split/{split_id}")
+@router.get("/{split_id}")
 def get_split(split_id: int):
     '''Returns a split given a split id'''
     with db.engine.begin() as connection:
@@ -72,7 +75,7 @@ def get_split(split_id: int):
             "user_added": split.user_added}
 
 
-@router.get("/split/{user_id}/")
+@router.get("/{user_id}/")
 def get_split_by_user(user_id: int):
     '''Returns all splits created by a certain user'''
     with db.engine.begin() as connection:
@@ -97,8 +100,7 @@ def get_split_by_user(user_id: int):
     return user_splits_list
 
 
-@router.get("/split/{user_id}/pay/")
-
+@router.get("/{user_id}/pay/")
 def pay_splits(user_id: int):
     '''Given a user id, return how much they have to pay and to whom'''
     with db.engine.begin() as connection:
@@ -141,7 +143,7 @@ def pay_splits(user_id: int):
     return user_splits_list
 
 
-@router.delete("/split/{split_id}/delete/")
+@router.delete("/{split_id}/delete/")
 def delete_split(split_id: int):
     '''Delete a split given a split_id'''
     with db.engine.begin() as connection:

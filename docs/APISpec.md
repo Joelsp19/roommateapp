@@ -202,7 +202,7 @@ Displays all the chores to be completed and person to complete
 ]
 ```
 
-### GET `/chore/all`
+### GET `/chore/completed`
 
 Displays all the created chores that have been completed
 
