@@ -7,11 +7,11 @@ import logging
 import sys
 
 description = """
-The Roommate App is the premier site for all your roommate planning and tracking needs.
+Roommate Helper is the premier roommate management site to split grocery bills, assign chores, and schedule events.
 """
 
 app = FastAPI(
-    title="Roommate App",
+    title="Roommate Helper",
     description=description,
     version="0.0.1",
     terms_of_service="http://example.com/terms/",
@@ -39,4 +39,4 @@ async def validation_exception_handler(request, exc):
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Roommate App."}
+    return {"message": "Welcome to the Roommate Helper."}

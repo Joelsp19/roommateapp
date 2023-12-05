@@ -183,16 +183,17 @@ Displays all the chores to be completed and person to complete
 [
   {
     "id": "integer",
-    "chore_name": "string",
-    "assigned_person": "string",
-    "completed": "boolean"
+    "name": "string",
+    "completed": "boolean",
+    "assigned": "string",
+    "points": "integer"
   }
 ]
 ```
 
 ### GET `/chore/all`
 
-Displays all the created chores that have been completed and to be completed
+Displays all the created chores that have been completed
 
 **Returns**:
 
@@ -200,8 +201,9 @@ Displays all the created chores that have been completed and to be completed
 [
   {
     "id": "integer",
-    "chore_name": "string",
-    "completed": "boolean"
+    "name": "string",
+    "assigned": "integer",
+    "points": "integer"
   }
 ]
 ```
@@ -220,6 +222,10 @@ Displays all the chores to be completed and associated user
     "completed": "boolean"
   }
 ]
+
+or if no chores:
+
+"Take a break! No chores to be completed."
 ```
 
 ### POST `/chore/`
@@ -230,7 +236,10 @@ Creates a new chore to be completed
 
 ```json
 {
-  "chore_name": "string"
+  "chore_name": "string",
+  "completed": true,
+  "assigned_user_id": 0,
+  "points": 0
 }
 ```
 
@@ -238,7 +247,7 @@ Creates a new chore to be completed
 
 ```json
 {
-  "success": "ok"
+  "chore_id": "integer"
 }
 ```
 
@@ -390,7 +399,7 @@ Deletes an item from the split
 
 ```json
 {
-  "success": "ok"
+  "deleted_item": "string"
 }
 ```
 
@@ -482,6 +491,6 @@ Removes an event from the calendar
 
 ```json
 {
-  "success": "ok"
+  "deleted_event": "string"
 }
 ```
