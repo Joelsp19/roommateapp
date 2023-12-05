@@ -35,15 +35,15 @@ def add_split(new_split: NewSplit):
 # @router.put("/split/{split_id}/update/")
 
 
-@router.get("/split/")
-def get_split():
+@router.get("/split/{split_id}")
+def get_split(split_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        split_db = connection.execute(
             sqlalchemy.text("""
-                            SELECT * 
+                            SELECT id, name, price, quantity, user_added
                             FROM split
-                            """))
-    split_db = result.all()
+                            WHERE id = :split_id
+                            """), {"split_id": split_id}).all()
     split_list = []
     for split in split_db:
         split_list.append({
@@ -59,15 +59,15 @@ def get_split():
 @router.get("/split/{user_id}/")
 def get_split_user(user_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        user_splits = connection.execute(
             sqlalchemy.text("""
-                            SELECT *
+                            SELECT id, name, price, quantity, user_added
                             FROM split
                             WHERE user_added = :user_added
                             """),
                             {"user_added": user_id}
-        )
-    user_splits = result.all()
+        ).all()
+ 
     user_splits_list = []
     for split in user_splits:
         user_splits_list.append({
@@ -81,16 +81,16 @@ def get_split_user(user_id: int):
 
 
 @router.get("/split/{user_id}/pay/")
-def pay_split(user_id: int):
+def pay_split_by_user(user_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        user_splits = connection.execute(
             sqlalchemy.text("""
-                            SELECT *
+                            SELECT id, name, price, quantity, user_added
                             FROM split
                             WHERE user_added != :user_added
                             """),
                             {"user_added": user_id}
-        )
+        ).all()
 
         room_id = connection.execute(
             sqlalchemy.text("""
@@ -111,7 +111,7 @@ def pay_split(user_id: int):
         )
         num_roommates = num_roommates.scalar()
 
-    user_splits = result.all()
+    
     user_splits_list = []
     for split in user_splits:
         user_splits_list.append({
@@ -131,12 +131,15 @@ def pay_split(user_id: int):
 @router.delete("/split/{split_id}/delete/")
 def delete_split(split_id: int):
     with db.engine.begin() as connection:
-        connection.execute(
+        result = connection.execute(
             sqlalchemy.text("""
                             DELETE
                             FROM split
                             WHERE id = :split_id
+                            RETURNING *
                             """),
                             {"split_id": split_id}
-        )
-    return {"success": "ok"}
+        ).first()
+
+
+    return {"deleted_item": result.name}

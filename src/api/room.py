@@ -28,11 +28,11 @@ def add_room(new_room: NewRoom):
         )
         calendar_id = calendar_id.scalar()
 
-        result = connection.execute(
+        room_id = connection.execute(
             sqlalchemy.text("INSERT INTO room (room_name, calendar_id) VALUES (:room_name, :calendar_id) RETURNING id"),
             {"room_name": new_room.room_name, "calendar_id": calendar_id}
-        )
-        room_id = result.scalar()
+        ).scalar()
+       
     return {"room_id": room_id}
 
 #update room info
@@ -86,21 +86,20 @@ def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
 
 #get the room details
 @router.get("/{room_id}")
-def get_room():
+def get_room(room_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        room = connection.execute(
             sqlalchemy.text(
             """
             SELECT room_name, name as calendar_name
             FROM room
             JOIN calendar on calendar_id = calendar.id
-            WHERE id = :room_id
-            """)
-        )
-        room = result.scalars()
+            WHERE room.id = :room_id
+            """),  {"room_id": room_id}
+        ).first()
 
     return {
-        "room_name":room.room_name,
+        "room_name": room.room_name,
         "calendar_id": room.calendar_name
     }
 
@@ -112,11 +111,13 @@ class NewUser(BaseModel):
 @router.post("/user")
 def add_user(new_user: NewUser):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        id = connection.execute(
             sqlalchemy.text("INSERT INTO users (name, room_id) VALUES (:name, :room_id) RETURNING id"),
             {"name": new_user.name, "room_id": new_user.room_id}
-        )
-    return {"success": "ok"}
+        ).first().id
+
+        
+    return {"id": id}
 
 
 class User(BaseModel):
@@ -127,25 +128,29 @@ class User(BaseModel):
 @router.get("/user/{id}")
 def get_user(id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text("SELECT * FROM users WHERE id = :user_id"),
+        user = connection.execute(
+            sqlalchemy.text("SELECT id, name, room_id, points FROM users WHERE id = :user_id"),
             {"user_id": id}
-        )
-    user = result.first()
-    user_dict = {
-        "id": user.id,
-        "name": user.name,
-        "room_id": user.room_id,
-        "points": user.points
-    }
-    return user_dict
+        ).first()
+   
+    if user != None:
+        user_dict = {
+            "id": user.id,
+            "name": user.name,
+            "room_id": user.room_id,
+            "points": user.points
+        }
+        return user_dict
+    else :
+        return {"User not found"}
+    
 
 @router.put("/user/{id}")
 def set_user(id: int, user: User, calendar_id: int = None):
     with db.engine.begin() as connection:
 
         if calendar_id == None:
-            result = connection.execute(
+            connection.execute(
                 sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points
                                 WHERE id = :user_id"""),
                 {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": id }
@@ -164,7 +169,7 @@ def set_user(id: int, user: User, calendar_id: int = None):
             if valid_calendar_id.scalar() == None:
                 return "Not a valid calendar id"
 
-            result = connection.execute(
+            connection.execute(
                 sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points, calendar_id = :calendar_id
                                 WHERE id = :user_id"""),
                 {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": id, "calendar_id":calendar_id }
@@ -175,13 +180,15 @@ def set_user(id: int, user: User, calendar_id: int = None):
 @router.delete("/user/{id}")
 def delete_user(id: int):
     with db.engine.begin() as connection:
-        connection.execute(
+        deleted = connection.execute(
             sqlalchemy.text("""DELETE FROM users
-                            WHERE id = :id"""),
+                            WHERE id = :id
+                            RETURNING *
+                            """),
                             {"id": id}
-        )
+        ).first()
 
-    return {"success": "ok"}
+    return {"deleted_user": deleted.name}
 
 @router.get("/{room_id}/free_time")
 def free_time(room_id: int, date_wanted: date):
@@ -240,14 +247,14 @@ def free_time(room_id: int, date_wanted: date):
             ORDER BY time
             """),
             {"room_id": room_id, "date": date_wanted.strftime("%Y/%m/%d")}
-        )
+        ).all()
 
     #use a stack
     #each index will appear twice in the hash table
     #on the second appearance, remove the existing elem
     #if the list is empty then we have free time until the next available time
 
-    list_times = times.all()
+    list_times = times
     print(list_times)
     ih = []
     if len(list_times)>1:
@@ -282,15 +289,9 @@ def get_reward(room_id: int):
         for row in res:
             users.append(row.id)
 
-        print("users", users)
-        curmomth = func.extract('month', func.timezone('UTC', func.now()))
-        curyear = func.extract('year', func.timezone('UTC', func.now()))
-
         currentMonth = datetime.now().month
         currentYear = datetime.now().year
 
-        print(currentMonth)
-        print(currentYear)
 
         points = []
         for user in users:

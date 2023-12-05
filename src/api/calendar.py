@@ -17,11 +17,11 @@ class NewCalendar(BaseModel):
 @router.post("/")
 def add_calendar(new_calendar: NewCalendar):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        calendar_id = connection.execute(
             sqlalchemy.text("INSERT INTO calendar (name) VALUES (:name) RETURNING id"),
             {"name": new_calendar.calendar_name}
-        )
-    calendar_id = result.scalar()
+        ).scalar()
+
     return {"calendar_id": calendar_id}
 
 #returns all the calendar information
@@ -29,14 +29,14 @@ def add_calendar(new_calendar: NewCalendar):
 def get_calendars():
     cal_list = []
     with db.engine.begin() as connection:
-        result = connection.execute(
+        calendars = connection.execute(
             sqlalchemy.text(
                 """            
-                SELECT *
+                SELECT id, name
                 FROM calendar 
                 """)
         )
-    for calendar in result:
+    for calendar in calendars:
         cal_list.append(
             {
                 "id": calendar.id,
@@ -51,7 +51,7 @@ def get_calendars():
 @router.put("/{calendar_id}")
 def update_calendar(new_calendar: NewCalendar, calendar_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        connection.execute(
             sqlalchemy.text(
                 """            
                 UPDATE calendar
@@ -68,16 +68,16 @@ def update_calendar(new_calendar: NewCalendar, calendar_id: int):
 def get_calendar(calendar_id:int):
     cal_list = []
     with db.engine.begin() as connection:
-        result = connection.execute(
+        calendars = connection.execute(
             sqlalchemy.text(
                 """            
-                SELECT *
+                SELECT id, name
                 FROM calendar
-                WHERE id = calendar_id 
+                WHERE id = :calendar_id 
                 """),
             {"calendar_id": calendar_id}
         )
-    for calendar in result:
+    for calendar in calendars:
         cal_list.append(
             {
                 "id": calendar.id,
@@ -103,7 +103,7 @@ class NewEvent(BaseModel):
 def get_events(calendar_id: int):
     events = []
     with db.engine.begin() as connection:
-        result = connection.execute(
+        events_list = connection.execute(
             sqlalchemy.text(
                 """
                 SELECT *
@@ -113,7 +113,7 @@ def get_events(calendar_id: int):
                 """),
                 {"calendar_id": calendar_id})
         
-    for event in result:
+    for event in events_list:
         events.append({
             "id": event.id,
             "name": event.name,
@@ -130,7 +130,7 @@ def get_events(calendar_id: int):
 @router.post("/{calendar_id}/event")
 def add_event(new_event: NewEvent, calendar_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        connection.execute(
             sqlalchemy.text(
                 """
                 INSERT INTO event (name, description, start_time, end_time, calendar_id)
@@ -152,7 +152,7 @@ def add_event(new_event: NewEvent, calendar_id: int):
 @router.put("/{calendar_id}/event/{event_id}")
 def update_event(new_event: NewEvent, calendar_id: int, event_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        connection.execute(
             sqlalchemy.text(
                 """
                UPDATE event
@@ -168,9 +168,9 @@ def update_event(new_event: NewEvent, calendar_id: int, event_id: int):
 #returns a specific event for a specific calendar
 @router.get("/{calendar_id}/event/{event_id}")
 def get_event(calendar_id: int, event_id: int):
-    events = []
+    
     with db.engine.begin() as connection:
-        result = connection.execute(
+        events = connection.execute(
             sqlalchemy.text(
                 """
                 SELECT *
@@ -178,9 +178,10 @@ def get_event(calendar_id: int, event_id: int):
                 WHERE calendar_id = :calendar_id and id=:event_id
                 """),
                 {"calendar_id": calendar_id, "event_id": event_id})
-        
-    for event in result:
-        events.append({
+
+    specific_event = [] 
+    for event in events:
+        specific_event.append({
             "id": event.id,
             "name": event.name,
             "description": event.description,
@@ -189,20 +190,22 @@ def get_event(calendar_id: int, event_id: int):
             "calendar_id": event.calendar_id
         })
 
-    return events
+    return specific_event
 
 @router.delete("/{calendar_id}/event/{event_id}")
 def delete_event(calendar_id: int, event_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
+        deleted = connection.execute(
             sqlalchemy.text(
                 """
                 DELETE FROM event
                 WHERE calendar_id = :calendar_id and id=:event_id
+                RETURNING *
                 """),
-                {"calendar_id": calendar_id, "event_id": event_id})
+                {"calendar_id": calendar_id, "event_id": event_id}).first()
         
-    return {"success": "ok"}
+        
+    return {"deleted_event": deleted.name}
 
 
 
