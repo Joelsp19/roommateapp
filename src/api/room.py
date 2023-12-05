@@ -18,6 +18,7 @@ class NewRoom(BaseModel):
 
 @router.post("/")
 def add_room(new_room: NewRoom):
+    '''Adds a room to the database'''
     #every time you add a room then you want to create a room calendar
     #code from add_calendar
     calendar_name = new_room.room_name + "calendar"
@@ -35,9 +36,9 @@ def add_room(new_room: NewRoom):
        
     return {"room_id": room_id}
 
-#update room info
 @router.put("/{room_id}")
 def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
+    '''Update room data given a room_id'''
     #check if the given calendar_id is a valid calendar_id
     #update the roomname and calendar if it is
 
@@ -83,9 +84,9 @@ def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
     else:
         return {"success": "not_ok"}
 
-#get the room details
 @router.get("/{room_id}")
 def get_room(room_id: int):
+    '''Returns specific room data given a room_id'''
     with db.engine.begin() as connection:
         room = connection.execute(
             sqlalchemy.text(
@@ -102,104 +103,37 @@ def get_room(room_id: int):
         "calendar_id":  room.calendar_name if room.calendar_name != None else "No associated calendar"
     }
 
-
-class NewUser(BaseModel):
-    room_id: int
-    name: str
-
-@router.post("/user")
-def add_user(new_user: NewUser):
+@router.get("/{room_id}/users")
+def get_roommmates(room_id: int):
+    '''Given a room_id, returns a list of user ids living in the room'''
     with db.engine.begin() as connection:
-        id = connection.execute(
-            sqlalchemy.text("INSERT INTO users (name, room_id) VALUES (:name, :room_id) RETURNING id"),
-            {"name": new_user.name, "room_id": new_user.room_id}
-        ).first().id
-
-        
-    return {"id": id}
-
-
-class User(BaseModel):
-    name: str
-    room_id: int
-    points: int
-
-@router.get("/user/{id}")
-def get_user(id: int):
-    with db.engine.begin() as connection:
-        user = connection.execute(
-            sqlalchemy.text("SELECT id, name, room_id, points FROM users WHERE id = :user_id"),
-            {"user_id": id}
-        ).first()
-   
-    if user != None:
-        user_dict = {
-            "id": user.id,
-            "name": user.name,
-            "room_id": user.room_id,
-            "points": user.points
-        }
-        return user_dict
-    else :
-        return {"User not found"}
-    
-
-@router.put("/user/{id}")
-def set_user(id: int, user: User, calendar_id: int = None):
-    with db.engine.begin() as connection:
-
-        if calendar_id == None:
-            connection.execute(
-                sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points
-                                WHERE id = :user_id"""),
-                {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": id }
-            )
-        else:
-            valid_calendar_id= connection.execute(
-                sqlalchemy.text(
+        roommates = connection.execute(
+            sqlalchemy.text(
                 """
                 SELECT id
-                FROM calendar
-                WHERE id = :calendar_id
-                """),
-                {"calendar_id": calendar_id}
-            )
-
-            if valid_calendar_id.scalar() == None:
-                return "Not a valid calendar id"
-
-            connection.execute(
-                sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points, calendar_id = :calendar_id
-                                WHERE id = :user_id"""),
-                {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": id, "calendar_id":calendar_id }
-            )
-
-    return {"success": "ok"}
-
-@router.delete("/user/{id}")
-def delete_user(id: int):
-    with db.engine.begin() as connection:
-        deleted = connection.execute(
-            sqlalchemy.text("""DELETE FROM users
-                            WHERE id = :id
-                            RETURNING *
-                            """),
-                            {"id": id}
-        ).first()
-
-    return {"deleted_user": deleted.name}
+                FROM users
+                WHERE room_id = :room_id
+                """
+            ),
+            {"room_id": room_id}
+        ).all()
+    
+    roommate_list = [roommate[0] for roommate in roommates]
+    return roommate_list
 
 @router.get("/{room_id}/free_time")
-def free_time(room_id: int, date_wanted: date):
-    # grab all calendarids associated with user under the room and the room
-    # grab all events with these calendarids
-    #choose all the rows that the date is between start and end date
-    # 4 cases:
-        #if start date before date_wanted then add '00:00:00' as a time
-        #if end date after date_wanted: then add '23:59:59' as a time
-        #both are not the date_wanted: then add '00:00:00' as a time and '23:59:59' as a time (no free time)
-        #both are the date watned: then add the corresponding time from database
-    # return all the free times
+def get_free_times(room_id: int, date_wanted: date):
+    '''
+    Grab all calendar ids associated with user under the room and the room
+    Grab all events with these calendar ids
+    Choose all the rows that the date is between start and end date
+    4 cases:
+        If start date before date_wanted: then add '00:00:00' as a time
+        If end date after date_wanted: then add '23:59:59' as a time
+        If both are not the date_wanted: then add '00:00:00' as a time and '23:59:59' as a time (no free time)
+        If both are the date_wanted: then add the corresponding time from database
+    Return all the free times
+    '''
 
     with db.engine.begin() as connection:
         list = []
@@ -279,6 +213,8 @@ def free_time(room_id: int, date_wanted: date):
 
 @router.post("/reward")
 def get_reward(room_id: int):
+    '''Adds reward event to user's calendar for user with the most points
+    at the end of the month'''
     with db.engine.begin() as connection:
         res = connection.execute(
             sqlalchemy.text("SELECT * FROM users WHERE room_id = :room_id"),

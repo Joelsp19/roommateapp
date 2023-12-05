@@ -1,7 +1,7 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import  room, chore, split, calendar
+from src.api import user, room, chore, split, calendar
 import json
 import logging
 import sys
@@ -16,11 +16,12 @@ app = FastAPI(
     version="0.0.1",
     terms_of_service="http://example.com/terms/",
     contact={
-        "name": "Lucas Pierce",
-        "email": "lupierce@calpoly.edu",
+        "name": "Joel Puthankalam",
+        "email": "jputhank@calpoly.edu",
     },
 )
 
+app.include_router(user.router)
 app.include_router(room.router)
 app.include_router(chore.router)
 app.include_router(split.router)

@@ -22,7 +22,7 @@ Adds a room (done on creation)
 }
 ```
 
-### POST `/room/user/`
+### POST `/user/`
 
 Adds a user and creates id
 
@@ -30,8 +30,7 @@ Adds a user and creates id
 
 ```json
 {
-"room_id": "integer"
-"name": "string"
+  "user_id": "integer"
 }
 ```
 
@@ -43,44 +42,7 @@ Adds a user and creates id
 }
 ```
 
-### GET `/room/user/superuser`
-
-Displays information about the superuser
-
-**Returns**:
-
-```json
-{
-  "id": "integer",
-  "name": "string"
-}
-```
-
-### POST `/room/user/{id}/superuser`
-
-Requests to become the superuser
-
-**Returns**:
-
-```json
-{
-  "success": "ok"
-}
-```
-
-### POST `/room/user/{id}/superuser/{new_id}/transfer`
-
-Transfers the superuser to be the new user(must be a superuser)
-
-**Returns**:
-
-```json
-{
-  "success": "ok"
-}
-```
-
-### GET `/room/user/{id}/`
+### GET `/user/{id}/`
 
 Displays user information
 
@@ -95,7 +57,7 @@ Displays user information
 }
 ```
 
-### PUT `/room/user/{id}/`
+### PUT `/user/{id}/`
 
 Updates user information
 
@@ -118,7 +80,19 @@ Updates user information
 }
 ```
 
-### DELETE `/room/user/{id}`
+### GET `/room/{room_id}/users`
+
+Returns a list of user ids in the room
+
+**Returns**:
+
+```json
+[
+    "integer"
+]
+```
+
+### DELETE `/user/{id}`
 
 Removes a user
 
@@ -159,7 +133,7 @@ Complex Endpoint 2 - Finds the user in the specified room id who earned the most
 
 ```json
 {
-"room_id": "integer"
+  "room_id": "integer"
 }
 ```
 
@@ -191,7 +165,7 @@ Displays all the chores to be completed and person to complete
 ]
 ```
 
-### GET `/chore/all`
+### GET `/chore/completed`
 
 Displays all the created chores that have been completed
 
@@ -260,6 +234,18 @@ Updates the chore with person to complete
 ```json
 {
   "success": "ok"
+}
+```
+
+### PUT `/chore/{chore_id}/duration`
+
+Returns how long the chore has been uncompleted for
+
+**Return**:
+
+```json
+{
+  "duration": "string"
 }
 ```
 
