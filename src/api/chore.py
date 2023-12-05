@@ -66,9 +66,9 @@ def get_completed_chores():
     with db.engine.begin() as connection:
         chores = connection.execute(
             sqlalchemy.text("""
-                            SELECT id, chore_name, completed, name as assigned_user_name, points 
+                            SELECT chores.id, chore_name, completed, name as assigned_user_name, chores.points 
                             FROM chores
-                            JOIN users on users.id = assigned_user_id
+                            LEFT JOIN users on users.id = assigned_user_id
                             WHERE completed=true
                             """),
         )
