@@ -49,17 +49,37 @@ def get_chore():
     return {"success": "ok"}
 
 @router.get("/all")
-def get_all_chore():
+def get_completed_chores():
     '''Returns all completed chores in the database'''
+    completed_list = []
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("SELECT * FROM chores WHERE completed = true"),
         )
 
-    for chore in result:
-        print(chore)
+        for chore in result:
+            chore_id: int = chore[0]
+            chore_time_created = chore[1]       # datetime format
+            chore_name: str = chore[2]
+            assigned_user_id = chore[3]
+            if assigned_user_id != None:
+                assigned_user_name: str = connection.execute(
+                    sqlalchemy.text("SELECT name FROM users WHERE id = :uid"),
+                    {"uid": assigned_user_id}
+                ).first()[0]
+            else:
+                assigned_user_name: str = "No user assigned"
+            completed: bool = chore[4]
+            points: int = chore[5]
+            completed_list.append({
+                "id": chore_id,
+                "chore_name": chore_name,
+                "assigned user": assigned_user_name,
+                "completed": completed,
+                "points": points,
+            })
 
-    return {"success": "ok"}
+    return completed_list
 
 @router.post("/{chore_id}/claim/{user_id}")
 def set_user(chore_id: int, user_id: int):
@@ -122,4 +142,3 @@ def update_completed(choreid: int):
             {"choreid": choreid}
         )
     return {"success" : "ok"}
-
