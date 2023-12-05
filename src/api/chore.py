@@ -5,8 +5,8 @@ import sqlalchemy
 from src import database as db
 
 router = APIRouter(
-    prefix="/chore",
-    tags=["chore"],
+    prefix="/chores",
+    tags=["chores"],
     dependencies=[Depends(auth.get_api_key)],
 )
 
@@ -36,40 +36,45 @@ def add_chore(new_chore: NewChore):
 
 @router.get("/")
 def get_chore():
+    chores = []
     with db.engine.begin() as connection:
-        chores = connection.execute(
-            sqlalchemy.text("SELECT id, chore_name, completed, assigned_user_id, points FROM chores ")
+        result = connection.execute(
+            sqlalchemy.text("""SELECT chore_name, completed, name as assigned_user_name, points 
+                            FROM chores
+                            JOIN users on users.id = assigned_user_id
+                            """)
         )
 
-    chore_list = []
-    for chore in chores:
-        chore_list.append({
-            "id": chore.id,
-            "name": chore.chore_name,
+    for chore in result:
+        chores.append({
+            "chore_id" : chore.id,
+            "chore_name": chore.name,
             "completed": chore.completed,
-            "assigned": chore.assigned_user_id,
+            "assigned_user_id": chore.assigned_user_name,
             "points": chore.points
         })
-    return chore_list
 
+    return chores
 
-@router.get("/all")
-def get_completed_chore():
+@router.get("/completed")
+def get_chores_completed():
+    chores = []
     with db.engine.begin() as connection:
-        chores = connection.execute(
-            sqlalchemy.text("SELECT id, chore_name, assigned_user_id, points FROM chores WHERE completed = true"),
+        result = connection.execute(
+            sqlalchemy.text("""SELECT chore_name, completed, name as assigned_user_name, points 
+                            FROM chores
+                            JOIN users on users.id = assigned_user_id
+                            WHERE completed=true
+                            """),
         )
-
-    chore_list = []
-    for chore in chores:
-        chore_list.append({
-            "id": chore.id,
-            "name": chore.chore_name,
-            "assigned": chore.assigned_user_id,
+    for chore in result:
+        chores.append({
+            "chore_id" : chore.id,
+            "chore_name": chore.name,
+            "assigned_user_id": chore.assigned_user_name,
             "points": chore.points
         })
-    return chore_list
-
+    return chores
 
 @router.post("/{chore_id}/claim/{user_id}")
 def set_user(chore_id: int, user_id: int):
@@ -106,7 +111,8 @@ def get_chores_by_id(id: int):
             }
         )
     if list == []:
-        return "Take a break! No chores to be completed."
+        print("Take a break! No chores to be completed.")
+        return []
 
     return list
 

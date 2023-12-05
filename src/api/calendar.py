@@ -6,8 +6,8 @@ import sqlalchemy
 from src import database as db
 
 router = APIRouter(
-    prefix="/calendar",
-    tags=["calendar"],
+    prefix="/calendars",
+    tags=["calendars"],
     dependencies=[Depends(auth.get_api_key)],
 )
 
