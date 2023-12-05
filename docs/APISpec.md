@@ -30,8 +30,7 @@ Adds a user and creates id
 
 ```json
 {
-"room_id": "integer"
-"name": "string"
+  "user_id": "integer"
 }
 ```
 
@@ -118,6 +117,18 @@ Updates user information
 }
 ```
 
+### GET `/room/{room_id}/users`
+
+Returns a list of user ids in the room
+
+**Returns**:
+
+```json
+[
+    "integer"
+]
+```
+
 ### DELETE `/room/user/{id}`
 
 Removes a user
@@ -159,7 +170,7 @@ Complex Endpoint 2 - Finds the user in the specified room id who earned the most
 
 ```json
 {
-"room_id": "integer"
+  "room_id": "integer"
 }
 ```
 
@@ -260,6 +271,18 @@ Updates the chore with person to complete
 ```json
 {
   "success": "ok"
+}
+```
+
+### PUT `/chore/{chore_id}/duration`
+
+Returns how long the chore has been uncompleted for
+
+**Return**:
+
+```json
+{
+  "duration": "string"
 }
 ```
 
