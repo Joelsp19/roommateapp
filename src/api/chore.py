@@ -18,6 +18,7 @@ class NewChore(BaseModel):
 
 @router.post("/")
 def add_chore(new_chore: NewChore):
+    '''Adds a chore to the database'''
     with db.engine.begin() as connection:
         if new_chore.assigned_user_id != None:
             result = connection.execute(
@@ -36,6 +37,7 @@ def add_chore(new_chore: NewChore):
 
 @router.get("/")
 def get_chore():
+    '''Returns all chores in the database'''
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("SELECT * FROM chores ")
@@ -48,6 +50,7 @@ def get_chore():
 
 @router.get("/all")
 def get_all_chore():
+    '''Returns all completed chores in the database'''
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("SELECT * FROM chores WHERE completed = true"),
@@ -60,6 +63,7 @@ def get_all_chore():
 
 @router.post("/{chore_id}/claim/{user_id}")
 def set_user(chore_id: int, user_id: int):
+    '''Adds a user to a chore for them to complete'''
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("""UPDATE chores
@@ -71,6 +75,7 @@ def set_user(chore_id: int, user_id: int):
 
 @router.get("/{id}")
 def get_chores_by_id(id: int):
+    '''Returns a chore given a chore_id'''
     list = []
     with db.engine.begin() as connection:
         tab = connection.execute(
@@ -97,9 +102,9 @@ def get_chores_by_id(id: int):
 
     return list
 
-
 @router.post("/{choreid}/completed")
 def update_completed(choreid: int):
+    '''Completes a chore and awards the user points'''
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text(

@@ -1,31 +1,29 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import audit, admin, room, chore, split, calendar
+from src.api import room, chore, split, calendar
 import json
 import logging
 import sys
 
 description = """
-Central Coast Cauldrons is the premier ecommerce site for all your alchemical desires.
+The Roommate App is the premier site for all your roommate planning and tracking needs.
 """
 
 app = FastAPI(
-    title="Central Coast Cauldrons",
+    title="Roommate App",
     description=description,
     version="0.0.1",
     terms_of_service="http://example.com/terms/",
     contact={
-        "name": "Lucas Pierce",
-        "email": "lupierce@calpoly.edu",
+        "name": "Joel Puthankalam",
+        "email": "jputhank@calpoly.edu",
     },
 )
 
-app.include_router(audit.router)
 app.include_router(room.router)
 app.include_router(chore.router)
 app.include_router(split.router)
-app.include_router(admin.router)
 app.include_router(calendar.router)
 
 @app.exception_handler(exceptions.RequestValidationError)
@@ -41,4 +39,4 @@ async def validation_exception_handler(request, exc):
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Central Coast Cauldrons."}
+    return {"message": "Welcome to the Roommate App."}
