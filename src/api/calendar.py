@@ -90,8 +90,6 @@ def get_calendar(calendar_id:int):
     return cal_list
 
 
-
-
 class NewEvent(BaseModel):
     name: str
     description: str
@@ -168,7 +166,6 @@ def update_event(new_event: NewEvent, calendar_id: int, event_id: int):
 
 @router.get("/{calendar_id}/event/{event_id}")
 def get_event(calendar_id: int, event_id: int):
-    
     '''Returns a specific event for a specific calendar'''
     events = []
     with db.engine.begin() as connection:
@@ -209,6 +206,3 @@ def delete_event(calendar_id: int, event_id: int):
         
         
     return {"deleted_event": deleted.name}
-
-
-
