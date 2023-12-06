@@ -238,7 +238,10 @@ def get_free_times(room_id: int, date_wanted: date):
             else:
                 list.append((list_times[i].time,list_times[i+1].time))
 
-    if len(list) == 0:
+    if len(list_times)<1:
+        return "Your whole day is free"
+    
+    if len(list_times)>1 and len(list) == 0:
         return "You have no free time today :("
     return list
 
