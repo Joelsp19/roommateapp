@@ -95,9 +95,10 @@ def delete_user(id: int):
         deleted = connection.execute(
             sqlalchemy.text("""DELETE FROM users
                             WHERE id = :id
-                            RETURNING *
+                            RETURNING name
                             """),
                             {"id": id}
         ).first()
-
+    if deleted == None:
+        return {"deleted_user": f"No user found of id {id}"}
     return {"deleted_user": deleted.name}

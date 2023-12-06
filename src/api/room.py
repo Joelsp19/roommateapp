@@ -21,7 +21,7 @@ def add_room(new_room: NewRoom):
     '''Adds a room to the database'''
     #every time you add a room then you want to create a room calendar
     #code from add_calendar
-    calendar_name = new_room.room_name + "calendar"
+    calendar_name = new_room.room_name + " calendar"
     with db.engine.begin() as connection:
         calendar_id = connection.execute(
             sqlalchemy.text("INSERT INTO calendar (name) VALUES (:name) RETURNING id"),
@@ -242,6 +242,8 @@ def get_reward(room_id: int):
 
         print("test")
         print(points)
+        if points == []:
+            return {"success": f"Error: No room with id {room_id}"}
         max_user = users[points.index(max(points))]
 
         maxname = connection.execute(

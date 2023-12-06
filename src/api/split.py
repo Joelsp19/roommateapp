@@ -68,6 +68,9 @@ def get_split(split_id: int):
                             """),
                             {"split_id": split_id}
     ).first()
+    
+    if split == None:
+        return {"success": f"Error: No split found with split id {split_id}"}
     return {"id": split.id,
             "name": split.name,
             "price": split.price,
@@ -104,15 +107,6 @@ def get_split_by_user(user_id: int):
 def pay_splits(user_id: int):
     '''Given a user id, return how much they have to pay and to whom'''
     with db.engine.begin() as connection:
-        user_splits = connection.execute(
-            sqlalchemy.text("""
-                            SELECT id, name, price, quantity, user_added
-                            FROM split
-                            WHERE user_added != :user_added
-                            """),
-                            {"user_added": user_id}
-        ).all()
-
         room_id = connection.execute(
             sqlalchemy.text("""
                             SELECT users.room_id
@@ -132,13 +126,34 @@ def pay_splits(user_id: int):
         )
         num_roommates = num_roommates.scalar()
 
+        room_splits = connection.execute(
+            sqlalchemy.text("""
+                            SELECT
+                                split.id,
+                                price,
+                                quantity,
+                                user_added
+                            FROM split
+                            JOIN users ON users.id = split.user_added
+                            WHERE 
+                                room_id = :room_id AND
+                                user_added != :user_id
+                            """),
+                            {"user_id": user_id,
+                             "room_id": room_id}
+        ).all()
     
     user_splits_list = []
-    for split in user_splits:
+    for split in room_splits:
+        print(split)
+        name = split[0]
+        price = split[1]
+        quantity = split[2]
+        user_added = split[3]
         user_splits_list.append({
-            "Item": split.name,
-            "Price you pay": split.price / num_roommates,
-            "Who you pay": split.user_added
+            "Item": name,
+            "Price you pay": price / num_roommates,
+            "Who you pay": user_added
         })
     return user_splits_list
 
@@ -157,5 +172,6 @@ def delete_split(split_id: int):
                             {"split_id": split_id}
         ).first()
 
-
+    if result == None:
+        return {"success": f"Error: No split with id {split_id}"}
     return {"deleted_item": result.name}

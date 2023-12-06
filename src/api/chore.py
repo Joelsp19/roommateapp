@@ -101,8 +101,8 @@ def set_user(chore_id: int, user_id: int):
     return {"success": "ok"}
 
 @router.get("/{id}")
-def get_chores_by_id(id: int):
-    '''Returns a chore given a chore_id'''
+def get_chores_by_uid(id: int):
+    '''Returns all chores assigned to user'''
     list = []
     with db.engine.begin() as connection:
         tab = connection.execute(
@@ -134,7 +134,7 @@ def get_chores_by_id(id: int):
 def get_chore_duration(chore_id: int):
     '''Returns how long a chore has been uncompleted for'''
     with db.engine.begin() as connection:
-        created_time, completed_time = connection.execute(
+        result = connection.execute(
             sqlalchemy.text(
                 """
                 SELECT created_at, completed_at
@@ -143,8 +143,12 @@ def get_chore_duration(chore_id: int):
                 """
             ),
             {"chore_id": chore_id}
-        ).all()[0]
+        ).all()
 
+    if result == []:
+        return {"duration": f"Error: No chore found with chore id {chore_id}"}
+
+    created_time, completed_time = result[0]
     if completed_time == None:
         date_diff = datetime.now(tz=created_time.tzinfo) - created_time
     else:
@@ -157,7 +161,7 @@ def get_chore_duration(chore_id: int):
 def update_completed(chore_id: int):
     '''Completes a chore and awards the user points'''
     with db.engine.begin() as connection:
-        completed, created_at = connection.execute(
+        result = connection.execute(
             sqlalchemy.text(
                 """
                 SELECT completed, created_at
@@ -165,7 +169,14 @@ def update_completed(chore_id: int):
                 WHERE id = :chore_id"""
             ),
             {"chore_id": chore_id}
-        ).all()[0]
+        ).all()
+
+        if result == []:
+            return {"success": f"Error: No chore found with chore id {chore_id}"}
+        completed, created_at = result[0]
+        if completed == True:
+            # Chore is already completed
+            return {"success": f"Chore is already completed"}
 
         connection.execute(
             sqlalchemy.text(

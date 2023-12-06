@@ -89,6 +89,19 @@ def get_calendar(calendar_id:int):
         return "No calendars available"
     return cal_list
 
+@router.delete("/{calendar_id}")
+def delete_calendar(calendar_id: int):
+    '''Deletes a calendar fron the database'''
+    with db.engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                """
+                DELETE FROM calendar
+                WHERE id = :calendar_id
+                """),
+                {"calendar_id": calendar_id}
+        )
+    return {"success": "ok"}
 
 class NewEvent(BaseModel):
     name: str
