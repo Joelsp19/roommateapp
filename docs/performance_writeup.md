@@ -1,4 +1,4 @@
-**Fake Data Modeling:**
+## Fake Data Modeling:
 The file for constructing the million rows is src/fakedata.py. At the time of testing, it took a parameter
 of the POSTGRES_URI of the local database.
 
@@ -17,7 +17,7 @@ Thus, we wanted to try and portray that, so we decided to start of with 50k room
 
 Our focus for this testing was near the start of the renting period, so there are fewer calendar events and chores, and since most roommate will bring shared items at the start, we decided to have more items in the split.
 
-**Performance Results for Each Endpoint:**
+## Performance Results for Each Endpoint:
 Rooms:
 - POST /rooms/ - 60.1ms
 - GET /rooms/{room_id} - 67.9ms
@@ -65,10 +65,11 @@ The three slowest endpoints starting from the slowest are:
 2. GET /chores/completed - 4.88s
 3. GET /calendars/ - 2.41s
 
-**Performance Tuning:**
+## Performance Tuning:
 1. GET /splits/{user_id}/pay
 
 This has 3 queries:
+```
 postgres=> EXPLAIN SELECT id, name, price, quantity, user_added
                         FROM split
                         WHERE user_added != 3000;
@@ -96,14 +97,17 @@ postgres->                         WHERE users.room_id = 3000;
    ->  Seq Scan on users  (cost=0.00..4450.00 rows=4 width=0)
          Filter: (room_id = 3000)
 (3 rows)
-
+```
 The explains are basically telling us that the first query sequentially scans on the split table for the user_added column which isn't really efficient. The second query does an indexscan using users_pkey in the users table, which is more efficient as its using an index. The third query scans the entire users table to count rows that match the room_id condition, which isn't efficient.
 
 We can add the following indexes:
+```
 CREATE INDEX idx_room_id ON users(room_id);
 CREATE INDEX idx_user_added ON split(user_added);
+```
 
 Running EXPLAIN again shows the query now using an index scan instead of sequential scan:
+```
 postgres=> EXPLAIN SELECT COUNT(*)
                         FROM users
                         WHERE users.room_id = 3000;
@@ -113,11 +117,11 @@ postgres=> EXPLAIN SELECT COUNT(*)
    ->  Index Only Scan using idx_room_id on users  (cost=0.42..8.49 rows=4 width=0)
          Index Cond: (room_id = 3000)
 (3 rows)
-
+```
 The new performance was 1.8s after applying the index, this is still a large time likely due to the sheer amount of data in the table and that the queries themselves can be changed to have better performance.
 
 2. GET /chores/completed
-
+```
 postgres=> EXPLAIN SELECT chores.id, chore_name, completed, name as assigned_user_name, chores.points
 postgres->                             FROM chores
 postgres->                             LEFT JOIN users on users.id = assigned_user_id
@@ -131,16 +135,19 @@ postgres->                             WHERE completed=true;
    ->  Hash  (cost=3950.01..3950.01 rows=200001 width=22)
          ->  Seq Scan on users  (cost=0.00..3950.01 rows=200001 width=22)
 (6 rows)
-
+```
 The explain queries display that there is a jash left join taking place between chores and users tables, and that there's a suquential scan on chores table with a filter of completed=true and a sequential scan of the users table with no filter.
 
 We can add the following indexes:
+```
 CREATE INDEX idx_completed ON chores(completed);
 CREATE INDEX idx_assigned_user_id ON chores(assigned_user_id);
 CREATE INDEX idx_users_id ON users(id);
 CREATE INDEX idx_completed_true ON chores(id) WHERE completed = true;
+```
 
 Running EXPLAIN provides the following result which displays that the sequential scan for chores is now replaced by an index scan using the last partial index with the completed=true condition:
+```
 postgres=> EXPLAIN SELECT chores.id, chore_name, completed, name as assigned_user_name, chores.points
                             FROM chores
                             LEFT JOIN users on users.id = assigned_user_id
@@ -153,30 +160,33 @@ postgres=> EXPLAIN SELECT chores.id, chore_name, completed, name as assigned_use
    ->  Hash  (cost=3950.01..3950.01 rows=200001 width=22)
          ->  Seq Scan on users  (cost=0.00..3950.01 rows=200001 width=22)
 (5 rows)
+```
 
 The new performance was 2.3s, which is now almost twice as fast and could work for the service, but as users increase, this would definitely need to be further improved in order to decrease computational usage and wait times.
 
 3. GET /calendars/
-
+```
 postgres=> EXPLAIN SELECT id, name
 postgres->                 FROM calendar;
                            QUERY PLAN
 -----------------------------------------------------------------
  Seq Scan on calendar  (cost=0.00..1868.15 rows=100115 width=30)
 (1 row)
-
+```
 This is a pretty simple query, and the explain shows the obvious that there is a sequential scan happening on the calendar table.
 
 We can add the following indexes:
+```
 CREATE INDEX idx_calendar_name ON calendar(name);
 CREATE INDEX idx_calendar_id_name ON calendar(id, name);
-
+```
 Even though we added the name index and composite index for name and column, there really won't be any effect, because this query is just defined in such a way where the index wouldn't be beneficial. This is displayed by the results:
+```
 postgres=> EXPLAIN SELECT id, name
                 FROM calendar;
                            QUERY PLAN
 -----------------------------------------------------------------
  Seq Scan on calendar  (cost=0.00..1867.15 rows=100015 width=30)
 (1 row)
-
+```
 The new performance was basically the same at 2.02s, as the indexes didn't make a difference for this endpoint because of the non-compatible query design with the process of indexing. For future steps, we'd try and improve the query design to support such indexing for this endpoint and a couple of other ones.
