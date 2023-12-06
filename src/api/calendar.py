@@ -169,6 +169,8 @@ def get_events(calendar_id: int):
 @router.post("/{calendar_id}/event")
 def add_event(new_event: NewEvent, calendar_id: int):
     '''Adds an event to the calendar'''
+    if new_event.start.strftime("%Y-%m-%d %H:%M:%S") > new_event.end.strftime("%Y-%m-%d %H:%M:%S"):
+        return "The end time is earlier than the start time. Please try again"
     try:
         with db.engine.begin() as connection:
             connection.execute(
