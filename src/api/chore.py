@@ -20,25 +20,28 @@ class NewChore(BaseModel):
 @router.post("/")
 def add_chore(new_chore: NewChore):
     '''Adds a chore to the database'''
-    try:
-        with db.engine.begin() as connection:
-            if new_chore.assigned_user_id != None:
-                chore_id = connection.execute(
-                    sqlalchemy.text("INSERT INTO chores (chore_name, assigned_user_id, completed, points) VALUES (:name, :assigned_user_id, :completed, :points) RETURNING id"),
-                    {"name": new_chore.chore_name, "assigned_user_id": new_chore.assigned_user_id,
-                    "completed": new_chore.completed, "points": new_chore.points}
-                ).scalar()
-            else :
-                chore_id = connection.execute(
-                    sqlalchemy.text("INSERT INTO chores (chore_name, points) VALUES (:name, :points) RETURNING id"),
-                    {"name": new_chore.chore_name, "points": new_chore.points}
-                ).scalar()
+    if new_chore.points < 0:
+        return "Points cannot be negative. Try Again"
+    else :
+        try:
+            with db.engine.begin() as connection:
+                if new_chore.assigned_user_id != None:
+                    chore_id = connection.execute(
+                        sqlalchemy.text("INSERT INTO chores (chore_name, assigned_user_id, completed, points) VALUES (:name, :assigned_user_id, :completed, :points) RETURNING id"),
+                        {"name": new_chore.chore_name, "assigned_user_id": new_chore.assigned_user_id,
+                        "completed": new_chore.completed, "points": new_chore.points}
+                    ).scalar()
+                else :
+                    chore_id = connection.execute(
+                        sqlalchemy.text("INSERT INTO chores (chore_name, points) VALUES (:name, :points) RETURNING id"),
+                        {"name": new_chore.chore_name, "points": new_chore.points}
+                    ).scalar()
 
 
-        return {"chore_id": chore_id}
-    except Exception as error:
-        print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+            return {"chore_id": chore_id}
+        except Exception as error:
+            print(f"Error returned: <<{error}>>")
+            return ("Couldn't complete endpoint")
 
 
 @router.get("/")

@@ -19,53 +19,59 @@ class NewSplit(BaseModel):
 @router.post("/")
 def add_split(new_split: NewSplit):
     '''Add a split in the database'''
-    try:
-        with db.engine.begin() as connection:
-            result = connection.execute(
-                sqlalchemy.text("""
-                                INSERT INTO split (name, price, quantity, user_added) 
-                                VALUES (:name, :price, :quantity, :user_added) 
-                                RETURNING id
-                                """) ,
-                                {"name": new_split.name,
-                                "price": new_split.price,
-                                "quantity": new_split.quantity,
-                                "user_added": new_split.user_added}
-            )
-            split_id = result.scalar()
-        return {"split_id": split_id}
-    except Exception as error:
-        print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+    if new_split.price < 0 or new_split.quantity < 0:
+        return "Fields cannot be negative. Try Again"
+    else :
+        try:
+            with db.engine.begin() as connection:
+                result = connection.execute(
+                    sqlalchemy.text("""
+                                    INSERT INTO split (name, price, quantity, user_added) 
+                                    VALUES (:name, :price, :quantity, :user_added) 
+                                    RETURNING id
+                                    """) ,
+                                    {"name": new_split.name,
+                                    "price": new_split.price,
+                                    "quantity": new_split.quantity,
+                                    "user_added": new_split.user_added}
+                )
+                split_id = result.scalar()
+            return {"split_id": split_id}
+        except Exception as error:
+            print(f"Error returned: <<{error}>>")
+            return ("Couldn't complete endpoint")
 
 
 @router.put("/{split_id}/update/")
 def update_split(split_id: int, name: str, price: float, quantity: int):
     '''Update a split given a split_id'''
-    try:
-        with db.engine.begin() as connection:
-            rows = connection.execute(
-                sqlalchemy.text("""
-                                UPDATE split
-                                SET
-                                    name = :name,
-                                    price = :price,
-                                    quantity = :quantity
-                                WHERE id = :split_id
-                                RETURNING *
-                                """),
-                                {"split_id": split_id,
-                                "name": name,
-                                "price": price,
-                                "quantity": quantity}
-            )
-            if rows.scalar() == None:
-                return "Not a valid ID"
-          
-        return {"success": "ok"}
-    except Exception as error:
-        print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+    if price < 0 or quantity < 0:
+        return "Fields cannot be negative. Try Again"
+    else :
+        try:
+            with db.engine.begin() as connection:
+                rows = connection.execute(
+                    sqlalchemy.text("""
+                                    UPDATE split
+                                    SET
+                                        name = :name,
+                                        price = :price,
+                                        quantity = :quantity
+                                    WHERE id = :split_id
+                                    RETURNING *
+                                    """),
+                                    {"split_id": split_id,
+                                    "name": name,
+                                    "price": price,
+                                    "quantity": quantity}
+                )
+                if rows.scalar() == None:
+                    return "Not a valid ID"
+            
+            return {"success": "ok"}
+        except Exception as error:
+            print(f"Error returned: <<{error}>>")
+            return ("Couldn't complete endpoint")
 
 
 @router.get("/{split_id}")
