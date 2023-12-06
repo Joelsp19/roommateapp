@@ -110,7 +110,7 @@ def get_room(room_id: int):
             room = connection.execute(
                 sqlalchemy.text(
                 """
-                SELECT room_name, name as calendar_name
+                SELECT room_name, name as calendar_name, calendar_id
                 FROM room
                 LEFT JOIN calendar on calendar_id = calendar.id
                 WHERE room.id = :room_id
@@ -119,7 +119,8 @@ def get_room(room_id: int):
 
         return {
             "room_name":room.room_name if room.room_name != None else "No associated room name",
-            "calendar_id":  room.calendar_name if room.calendar_name != None else "No associated calendar"
+            "calendar_name":  room.calendar_name if room.calendar_name != None else "No associated calendar",
+            "calendar_id" : room.calendar_id if room.calendar_id != None else "No associated calendar"
         }
     except Exception as error:
         print(f"Error returned: <<{error}>>")
