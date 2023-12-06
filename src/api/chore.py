@@ -42,7 +42,7 @@ def get_all_chores():
     chores = []
     with db.engine.begin() as connection:
         result = connection.execute(
-            sqlalchemy.text("""SELECT chore_name, completed, name as assigned_user_name, points 
+            sqlalchemy.text("""SELECT chore_name, completed, name as assigned_user_name, chores.points 
                             FROM chores
                             JOIN users on users.id = assigned_user_id
                             """)
@@ -50,8 +50,7 @@ def get_all_chores():
 
     for chore in result:
         chores.append({
-            "chore_id" : chore.id,
-            "chore_name": chore.name,
+            "chore_name": chore.chore_name,
             "completed": chore.completed,
             "assigned_user_id": chore.assigned_user_name,
             "points": chore.points
