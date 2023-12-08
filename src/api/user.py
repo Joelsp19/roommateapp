@@ -150,6 +150,8 @@ def delete_user(user_id: int):
                             """),
                             {"id": user_id}
         ).first()
+   
     if deleted == None:
         return {f"No user found of id {user_id}"}
+
     return {"deleted_user": deleted.name}

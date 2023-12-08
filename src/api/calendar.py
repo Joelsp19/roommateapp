@@ -14,46 +14,48 @@ router = APIRouter(
 class NewCalendar(BaseModel):
     calendar_name: str
 
-# @router.post("/")
-# def add_calendar(new_calendar: NewCalendar):
-#     '''Add a calendar to the database'''
-#     try:
-#         with db.engine.begin() as connection:
-#             calendar_id = connection.execute(
-#                 sqlalchemy.text("INSERT INTO calendar (name) VALUES (:name) RETURNING id"),
-#                 {"name": new_calendar.calendar_name}
-#             ).scalar()
-
-#         return {"calendar_id": calendar_id}
-#     except Exception as error:
-#         print(f"Error returned: <<{error}>>")
-#         return ("Couldn't complete endpoint")
-
 @router.get("/room/{room_id}")
-def get_calendars(room_id: int):
+def get_calendars_by_room(room_id: int):
     '''Given a room id, returns all the calendars in the room'''
     cal_list = []
     try:
         with db.engine.begin() as connection:
-            calendars = connection.execute(
+            user_calendars = connection.execute(
                 sqlalchemy.text(
                     """            
-                    SELECT calendar.id, calendar.name
-                    FROM calendar
-                    LEFT JOIN users ON users.calendar_id = calendar.id
-                    LEFT JOIN room ON room.calendar_id = calendar.id
-                    WHERE users.room_id = :room_id OR room.id = :room_id
+                    SELECT users.id as user_id, users.calendar_id, c2.name
+                    FROM users
+                    JOIN calendar as c2 on users.calendar_id = c2.id
+                    WHERE users.room_id = :room_id
                     """),
                     {"room_id": room_id}
             ).all()
-        print(calendars)
-        for calendar in calendars:
+
+            room_calendar = connection.execute(
+                sqlalchemy.text(
+                    """            
+                    SELECT room.calendar_id, c2.name
+                    FROM room
+                    JOIN calendar as c2 on room.calendar_id = c2.id
+                    WHERE room.id = :room_id
+                    """),
+                    {"room_id": room_id}
+            ).first()
+
+        for calendar in user_calendars:
             cal_list.append(
                 {
-                    "id": calendar.id,
+                    "calendar_id": calendar.calendar_id,
+                    "user_id" : calendar.user_id,
                     "calendar_name": calendar.name
                 }
             )
+        cal_list.append(
+            {
+                "calendar_id": room_calendar.calendar_id,
+                "calendar_name": room_calendar.name
+            }
+        )
         if len(cal_list) == 0:
             return "No calendars available"
         return cal_list
@@ -80,7 +82,7 @@ def update_calendar(new_calendar: NewCalendar, calendar_id: int):
                 return "Not a valid ID"
           
     
-        return {"success": "ok"}
+        return {"success": "updated calendar"}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")
@@ -114,29 +116,29 @@ def get_calendar(calendar_id:int):
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")
 
-@router.delete("/{calendar_id}")
-def delete_calendar(calendar_id: int):
-    '''Deletes a calendar fron the database'''
-    try:
-        with db.engine.begin() as connection:
-            connection.execute(
-                sqlalchemy.text(
-                    """
-                    DELETE FROM calendar
-                    WHERE id = :calendar_id
-                    """),
-                    {"calendar_id": calendar_id}
-            )
-        return {"success": "ok"}
-    except Exception as error:
-        print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+# @router.delete("/{calendar_id}")
+# def delete_calendar(calendar_id: int):
+#     '''Deletes a calendar fron the database'''
+#     try:
+#         with db.engine.begin() as connection:
+#             connection.execute(
+#                 sqlalchemy.text(
+#                     """
+#                     DELETE FROM calendar
+#                     WHERE id = :calendar_id
+#                     """),
+#                     {"calendar_id": calendar_id}
+#             )
+#         return {"success": "ok"}
+#     except Exception as error:
+#         print(f"Error returned: <<{error}>>")
+#         return ("Couldn't complete endpoint")
 
 class NewEvent(BaseModel):
     name: str
-    description: str
-    start: datetime = datetime.now(timezone.utc)
-    end: datetime = datetime.now(timezone.utc)
+    description: str | None = None
+    start: datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    end: datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 @router.get("/{calendar_id}/event")
@@ -160,9 +162,8 @@ def get_events(calendar_id: int):
                 "id": event.id,
                 "name": event.name,
                 "description": event.description,
-                "start": event.start_time,
-                "end": event.end_time,
-                "calendar_id": event.calendar_id
+                "start": event.start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "end": event.end_time.strftime("%Y-%m-%d %H:%M:%S"),
             })
 
         return events
@@ -178,11 +179,12 @@ def add_event(new_event: NewEvent, calendar_id: int):
         return "The end time is earlier than the start time. Please try again"
     try:
         with db.engine.begin() as connection:
-            connection.execute(
-                sqlalchemy.text(
+            uid =connection.execute(
+                 sqlalchemy.text(
                     """
                     INSERT INTO event (name, description, start_time, end_time, calendar_id)
                     VALUES (:name, :description, TIMESTAMP :start, TIMESTAMP :end, :calendar_id)
+                    RETURNING id
                     """
                 ),
                 {
@@ -191,10 +193,10 @@ def add_event(new_event: NewEvent, calendar_id: int):
                     "start": new_event.start.strftime("%Y-%m-%d %H:%M:%S"),
                     "end": new_event.end.strftime("%Y-%m-%d %H:%M:%S"),
                     "calendar_id": calendar_id,
-                },
-            )
+                }
+            ).scalar()
 
-        return {"success": "ok"}
+        return {"id": uid}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")
@@ -202,6 +204,14 @@ def add_event(new_event: NewEvent, calendar_id: int):
 @router.put("/{calendar_id}/event/{event_id}")
 def update_event(new_event: NewEvent, calendar_id: int, event_id: int):
     '''Updates an event in the calendar'''
+
+    try:
+        date_end = new_event.end.strftime("%Y-%m-%d %H:%M:%S")
+        date_start = new_event.start.strftime("%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return "Incorrect data format, should be YYYY-MM-DD"
+
+
     try:
         with db.engine.begin() as connection:
             rows = connection.execute(
@@ -219,7 +229,7 @@ def update_event(new_event: NewEvent, calendar_id: int, event_id: int):
                 return "Not a valid ID"
           
 
-        return {"success": "ok"}
+        return {"success": "updated calendar"}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")
