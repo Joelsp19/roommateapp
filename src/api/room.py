@@ -42,62 +42,26 @@ def add_room(new_room: NewRoom):
 
 
 @router.put("/{room_id}")
-def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
+def update_room(new_room: NewRoom, room_id: int):
     '''Update room data given a room_id'''
-    #check if the given calendar_id is a valid calendar_id
-    #update the roomname and calendar if it is
+
     try:
         with db.engine.begin() as connection:
-
-            if calendar_id == None:
-                result = connection.execute(
-                    sqlalchemy.text(
-                    """
-                    UPDATE room
-                    SET room_name = :room_name
-                    WHERE id = :room_id
-                    RETURNING *
-                    """),
-                    {"room_name": new_room.room_name, "room_id": room_id}
-                )
-                if result.scalar() == None:
-                    return "Not a valid ID"
-          
+            result = connection.execute(
+                sqlalchemy.text(
+                """
+                UPDATE room
+                SET room_name = :room_name
+                WHERE id = :room_id
+                RETURNING *
+                """),
+                {"room_name": new_room.room_name, "room_id": room_id}
+            )
+            if result.scalar() == None:
+                return "Not a valid ID"
                     
-            else:
-                valid_calendar_id= connection.execute(
-                    sqlalchemy.text(
-                    """
-                    SELECT id
-                    FROM calendar
-                    WHERE id = :calendar_id
-                    """),
-                    {"calendar_id": calendar_id}
-                )
-
-                if valid_calendar_id.scalar() == None:
-                    return "Not a valid calendar id"
-
-                result = connection.execute(
-                    sqlalchemy.text(
-                    """
-                    UPDATE room
-                    SET room_name = :room_name, calendar_id = :calendar_id
-                    WHERE id = :room_id
-                    RETURNING *
-                    """),
-                    {"room_name": new_room.room_name, "calendar_id": calendar_id, "room_id": room_id}
-                )
-             
-                if result.scalar() == None:
-                    return "Not a valid ID"
-          
-
-
-        # if result != None:
-        #     return {"success": "ok"}
-        # else:
-        #     return {"success": "not_ok"}
+        return {"success" :"updated room"}
+    
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")
@@ -151,7 +115,7 @@ def get_roommmates(room_id: int):
 
 
 @router.get("/{room_id}/free_time")
-def get_free_times(room_id: int, date_wanted: date):
+def get_free_times(room_id: int, date_wanted: str):
     '''
     Grab all calendar ids associated with user under the room and the room
     Grab all events with these calendar ids
@@ -163,8 +127,26 @@ def get_free_times(room_id: int, date_wanted: date):
         If both are the date_wanted: then add the corresponding time from database
     Return all the free times
     '''
+    # Check if date_wanted is in the correct format
+    try:
+        date_wanted = datetime.fromisoformat(date_wanted)
+    except ValueError:
+        return "Incorrect data format, should be YYYY-MM-DD"
+    
     try:
         with db.engine.begin() as connection:
+            # Check if room_id exists
+            room_id_check = connection.execute(
+                sqlalchemy.text("""
+                                SELECT *
+                                FROM room
+                                WHERE id = :room_id
+                                """),
+                {"room_id": room_id}
+            ).all()
+            if room_id_check == []:
+                return "Not a valid room id"
+
             list = []
             times = connection.execute(
                 sqlalchemy.text(
@@ -305,7 +287,7 @@ def get_reward(room_id: int):
                 "start_time": datetime.now(), "end_time": datetime.now()}
             )
 
-        return {"success": "ok"}
+        return {"success": f"Created reward for user {maxname}"}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")

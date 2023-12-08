@@ -39,7 +39,7 @@ def add_split(new_split: NewSplit):
             return {"split_id": split_id}
         except Exception as error:
             print(f"Error returned: <<{error}>>")
-            return ("Couldn't complete endpoint")
+            return ("Couldn't complete endpoint - please check your field values")
 
 
 @router.put("/{split_id}/update/")
@@ -71,7 +71,7 @@ def update_split(split_id: int, name: str, price: float, quantity: int):
             return {"success": "ok"}
         except Exception as error:
             print(f"Error returned: <<{error}>>")
-            return ("Couldn't complete endpoint")
+            return ("Couldn't complete endpoint - check your split id")
 
 
 @router.get("/{split_id}")
@@ -97,7 +97,7 @@ def get_split(split_id: int):
                 "user_added": split.user_added}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - check your split id")
 
 
 @router.get("/{user_id}/")
@@ -126,7 +126,7 @@ def get_split_by_user(user_id: int):
         return user_splits_list
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - check user id")
 
 
 @router.get("/{user_id}/pay/")
@@ -185,7 +185,7 @@ def pay_splits(user_id: int):
         return user_splits_list
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - check user id")
 
 @router.delete("/{split_id}/delete/")
 def delete_split(split_id: int):
@@ -207,4 +207,4 @@ def delete_split(split_id: int):
         return {"deleted_item": result.name}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - check split id")
