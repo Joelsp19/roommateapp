@@ -42,59 +42,26 @@ def add_room(new_room: NewRoom):
 
 
 @router.put("/{room_id}")
-def update_room(new_room: NewRoom, room_id: int, calendar_id: int = None):
+def update_room(new_room: NewRoom, room_id: int):
     '''Update room data given a room_id'''
-    #check if the given calendar_id is a valid calendar_id
-    #update the roomname and calendar if it is
+
     try:
         with db.engine.begin() as connection:
-
-            if calendar_id == None:
-                result = connection.execute(
-                    sqlalchemy.text(
-                    """
-                    UPDATE room
-                    SET room_name = :room_name
-                    WHERE id = :room_id
-                    RETURNING *
-                    """),
-                    {"room_name": new_room.room_name, "room_id": room_id}
-                )
-                if result.scalar() == None:
-                    return "Not a valid ID"
+            result = connection.execute(
+                sqlalchemy.text(
+                """
+                UPDATE room
+                SET room_name = :room_name
+                WHERE id = :room_id
+                RETURNING *
+                """),
+                {"room_name": new_room.room_name, "room_id": room_id}
+            )
+            if result.scalar() == None:
+                return "Not a valid ID"
                     
-            else:
-                valid_calendar_id= connection.execute(
-                    sqlalchemy.text(
-                    """
-                    SELECT id
-                    FROM calendar
-                    WHERE id = :calendar_id
-                    """),
-                    {"calendar_id": calendar_id}
-                )
-
-                if valid_calendar_id.scalar() == None:
-                    return "Not a valid calendar id"
-
-                result = connection.execute(
-                    sqlalchemy.text(
-                    """
-                    UPDATE room
-                    SET room_name = :room_name, calendar_id = :calendar_id
-                    WHERE id = :room_id
-                    RETURNING *
-                    """),
-                    {"room_name": new_room.room_name, "calendar_id": calendar_id, "room_id": room_id}
-                )
-             
-                if result.scalar() == None:
-                    return "Not a valid ID"
-
-        if result != None:
-            return {"success": "ok"}
-        else:
-            return {"success": "not_ok"}
+        return {"success" :"updated room"}
+    
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")

@@ -84,47 +84,38 @@ def get_user(id: int):
         return ("Couldn't complete endpoint")
 
 @router.put("/{id}")
-def set_user(id: int, user: User, calendar_id: int = None):
+def set_user(id: int, name: str | None = None, room_id: int | None = None):
     '''Updates user data'''
     try:
         with db.engine.begin() as connection:
-            if calendar_id == None:
-                    rows = connection.execute(
-                        sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points
-                                        WHERE id = :user_id RETURNING *"""),
-                        {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": id }
-                    )
-                    
-                    if rows.scalar() == None:
-                        return "Not a valid ID"
-                    
-            else:
-                valid_calendar_id= connection.execute(
-                    sqlalchemy.text(
-                    """
-                    SELECT id
-                    FROM calendar
-                    WHERE id = :calendar_id
-                    """),
-                    {"calendar_id": calendar_id}
-                )
-
-                if valid_calendar_id.scalar() == None:
-                    return "Not a valid calendar id"
-                
+            if(name != None and room_id != None):
                 rows = connection.execute(
-                    sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id, points = :points, calendar_id = :calendar_id
+                    sqlalchemy.text("""UPDATE users SET name = :name, room_id = :room_id
                                     WHERE id = :user_id RETURNING *"""),
-                    {"name": user.name, "room_id": user.room_id, "points": user.points, "user_id": id, "calendar_id":calendar_id }
+                    {"name": name, "room_id": room_id,  "user_id": id }
                 )
-
-                if rows.scalar() == None:
-                    return "Not a valid ID"
-          
-        return {"success": "ok"}
+            elif (name == None and room_id!=None):
+                rows = connection.execute(
+                    sqlalchemy.text("""UPDATE users SET room_id = :room_id
+                                    WHERE id = :user_id RETURNING *"""),
+                    {"room_id": room_id,  "user_id": id }
+                )
+            elif (name != None and room_id == None):
+                rows = connection.execute(
+                    sqlalchemy.text("""UPDATE users SET name = :name
+                                    WHERE id = :user_id RETURNING *"""),
+                    {"name": name,  "user_id": id }
+                )
+            else:
+                return "Please pass in some params to update"
+              
+            if rows.scalar() == None:
+                return "Not a valid user ID"
+                    
+            return {"success": "updated user"}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - check your room ID")
 
 @router.delete("/{user_id}")
 def delete_user(user_id: int):
