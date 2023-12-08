@@ -64,16 +64,17 @@ def get_user(id: int):
     try:
         with db.engine.begin() as connection:
             user = connection.execute(
-                sqlalchemy.text("SELECT id, name, room_id, points FROM users WHERE id = :user_id"),
+                sqlalchemy.text("SELECT id, name, room_id, points, calendar_id FROM users WHERE id = :user_id"),
                 {"user_id": id}
             ).first()
     
         if user != None:
             user_dict = {
                 "id": user.id,
+                "calendar_id": user.calendar_id if user.calendar_id != None else "User doesn't have a calendar",
                 "name": user.name,
                 "room_id": user.room_id,
-                "points": user.points
+                "points": user.points,
             }
             return user_dict
         else :
@@ -125,17 +126,39 @@ def set_user(id: int, user: User, calendar_id: int = None):
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")
 
-@router.delete("/{id}")
-def delete_user(id: int):
+@router.delete("/{user_id}")
+def delete_user(user_id: int):
     '''Deletes a user from the database given a user_id'''
     with db.engine.begin() as connection:
+        # Check if user has any remaining splits to pay
+        room_id = connection.execute(
+                sqlalchemy.text("""
+                                SELECT users.room_id
+                                FROM users
+                                WHERE users.id = :user_id"""),
+                                {"user_id": user_id}
+        ).scalar()
+
+        splits = connection.execute(
+            sqlalchemy.text("""
+                            SELECT *
+                            FROM split
+                            JOIN users ON users.id = split.user_added
+                            JOIN room ON room.id = users.room_id
+                            WHERE room.id = :room_id
+                            """),
+                            {"room_id": room_id}
+        ).all()
+        if splits != []:
+            return "You still have some unhandled splits!"
+
         deleted = connection.execute(
             sqlalchemy.text("""DELETE FROM users
                             WHERE id = :id
                             RETURNING name
                             """),
-                            {"id": id}
+                            {"id": user_id}
         ).first()
     if deleted == None:
-        return {f"No user found of id {id}"}
+        return {f"No user found of id {user_id}"}
     return {"deleted_user": deleted.name}

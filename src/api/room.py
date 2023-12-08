@@ -324,18 +324,3 @@ def get_reward(room_id: int):
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")
-    
-@router.delete("/{id}")
-def delete_user(id: int):
-    '''Deletes a user from the database given a user_id'''
-    with db.engine.begin() as connection:
-        deleted = connection.execute(
-            sqlalchemy.text("""DELETE FROM users
-                            WHERE id = :id
-                            RETURNING name
-                            """),
-                            {"id": id}
-        ).first()
-    if deleted == None:
-        return {f"No user found of id {id}"}
-    return {"deleted_user": deleted.name}

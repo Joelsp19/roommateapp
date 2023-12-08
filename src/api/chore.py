@@ -110,7 +110,7 @@ def get_completed_chores():
 
 
 @router.put("/{chore_id}/claim/{user_id}")
-def set_user(chore_id: int, user_id: int):
+def claim_chore(chore_id: int, user_id: int):
     '''Adds a user to a chore for them to complete'''
     try:
         with db.engine.begin() as connection:
@@ -130,7 +130,7 @@ def set_user(chore_id: int, user_id: int):
 
 
 @router.get("/{id}")
-def get_chores_by_uid(id: int):
+def get_chores_by_user(id: int):
     '''Returns all chores assigned to user'''
     list = []
     try:
