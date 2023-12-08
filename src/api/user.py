@@ -22,13 +22,6 @@ def add_user(new_user: NewUser):
     '''Add a user to the database'''
     try:
         with db.engine.begin() as connection:
-            id = connection.execute(
-                sqlalchemy.text("INSERT INTO users (name, room_id) VALUES (:name, :room_id) RETURNING id"),
-                {"name": new_user.name, "room_id": new_user.room_id}
-            )
-
-            uid = id.scalar()
-
             # Create a new calendar
             calendar_id = connection.execute(
                 sqlalchemy.text("""
@@ -41,16 +34,19 @@ def add_user(new_user: NewUser):
                                  "name": f"{new_user.name}'s calendar"}
             ).scalar()
 
-            connection.execute(
+            # Create user
+            uid = connection.execute(
                 sqlalchemy.text("""
-                                UPDATE users
-                                SET calendar_id = :calendar_id
-                                WHERE
-                                id = :uid
+                                INSERT INTO users
+                                (name, room_id, calendar_id)
+                                VALUES
+                                (:name, :room_id, :calendar_id)
+                                RETURNING id
                                 """),
                                 {"calendar_id": calendar_id,
-                                 "uid": uid}
-            )
+                                 "name": new_user.name,
+                                 "room_id": new_user.room_id}
+            ).scalar()
 
         return {"user_id": uid, "calendar_id": calendar_id}
     except Exception as error:

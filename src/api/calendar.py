@@ -29,24 +29,29 @@ class NewCalendar(BaseModel):
 #         print(f"Error returned: <<{error}>>")
 #         return ("Couldn't complete endpoint")
 
-@router.get("/")
-def get_calendars():
-    '''Returns all the calendar information in database'''
+@router.get("/room/{room_id}")
+def get_calendars(room_id: int):
+    '''Given a room id, returns all the calendars in the room'''
     cal_list = []
     try:
         with db.engine.begin() as connection:
             calendars = connection.execute(
                 sqlalchemy.text(
                     """            
-                    SELECT id, name
-                    FROM calendar 
-                    """)
-            )
+                    SELECT calendar.id, calendar.name
+                    FROM calendar
+                    LEFT JOIN users ON users.calendar_id = calendar.id
+                    LEFT JOIN room ON room.calendar_id = calendar.id
+                    WHERE users.room_id = :room_id OR room.id = :room_id
+                    """),
+                    {"room_id": room_id}
+            ).all()
+        print(calendars)
         for calendar in calendars:
             cal_list.append(
                 {
                     "id": calendar.id,
-                    "name": calendar.name
+                    "calendar_name": calendar.name
                 }
             )
         if len(cal_list) == 0:
