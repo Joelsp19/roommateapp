@@ -128,7 +128,7 @@ def claim_chore(chore_id: int, user_id: int):
         return {"success": "ok"}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - check your id")
 
 
 @router.get("/{id}")
@@ -163,7 +163,7 @@ def get_chores_by_user(id: int):
         return list
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - please check user_added id")
 
 
 @router.get("/{chore_id}/duration")
@@ -195,7 +195,7 @@ def get_chore_duration(chore_id: int):
         return {"duration": f"{days} days and {hours} hours"}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - please check your input")
 
 
 @router.put("/{chore_id}/completed")
@@ -252,4 +252,4 @@ def update_completed(chore_id: int):
         return {"success" : "ok"}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+        return ("Couldn't complete endpoint - please check your id")
