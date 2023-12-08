@@ -44,17 +44,20 @@ def add_chore(new_chore: NewChore):
             return ("Couldn't complete endpoint")
 
 
-@router.get("/")
-def get_all_chores():
-    '''Returns all chores in the database'''
+@router.get("/room/{room_id}")
+def get_all_chores(room_id: int):
+    '''Given a room id, returns all chores in the room'''
     chores = []
     try:
         with db.engine.begin() as connection:
             result = connection.execute(
-                sqlalchemy.text("""SELECT chore_name, completed, name as assigned_user_name, chores.points
+                sqlalchemy.text("""
+                                SELECT chore_name, completed, name as assigned_user_name, chores.points
                                 FROM chores
                                 JOIN users on users.id = assigned_user_id
-                                """)
+                                WHERE users.room_id = :room_id
+                                """),
+                                {"room_id": room_id}
             )
     except Exception as error:
         print(f"Error returned: <<{error}>>")

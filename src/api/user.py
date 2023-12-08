@@ -27,8 +27,32 @@ def add_user(new_user: NewUser):
                 {"name": new_user.name, "room_id": new_user.room_id}
             )
 
-        uid = id.scalar()
-        return {"user_id": uid}
+            uid = id.scalar()
+
+            # Create a new calendar
+            calendar_id = connection.execute(
+                sqlalchemy.text("""
+                                INSERT INTO calendar
+                                (created_at, name)
+                                VALUES
+                                (:created_at, :name)
+                                RETURNING id"""),
+                                {"created_at": datetime.now(),
+                                 "name": f"{new_user.name}'s calendar"}
+            ).scalar()
+
+            connection.execute(
+                sqlalchemy.text("""
+                                UPDATE users
+                                SET calendar_id = :calendar_id
+                                WHERE
+                                id = :uid
+                                """),
+                                {"calendar_id": calendar_id,
+                                 "uid": uid}
+            )
+
+        return {"user_id": uid, "calendar_id": calendar_id}
     except Exception as error:
         print(f"Error returned: <<{error}>>")
         return ("Couldn't complete endpoint")

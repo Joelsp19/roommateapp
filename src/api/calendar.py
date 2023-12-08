@@ -14,20 +14,20 @@ router = APIRouter(
 class NewCalendar(BaseModel):
     calendar_name: str
 
-@router.post("/")
-def add_calendar(new_calendar: NewCalendar):
-    '''Add a calendar to the database'''
-    try:
-        with db.engine.begin() as connection:
-            calendar_id = connection.execute(
-                sqlalchemy.text("INSERT INTO calendar (name) VALUES (:name) RETURNING id"),
-                {"name": new_calendar.calendar_name}
-            ).scalar()
+# @router.post("/")
+# def add_calendar(new_calendar: NewCalendar):
+#     '''Add a calendar to the database'''
+#     try:
+#         with db.engine.begin() as connection:
+#             calendar_id = connection.execute(
+#                 sqlalchemy.text("INSERT INTO calendar (name) VALUES (:name) RETURNING id"),
+#                 {"name": new_calendar.calendar_name}
+#             ).scalar()
 
-        return {"calendar_id": calendar_id}
-    except Exception as error:
-        print(f"Error returned: <<{error}>>")
-        return ("Couldn't complete endpoint")
+#         return {"calendar_id": calendar_id}
+#     except Exception as error:
+#         print(f"Error returned: <<{error}>>")
+#         return ("Couldn't complete endpoint")
 
 @router.get("/")
 def get_calendars():
